@@ -1,1 +1,21 @@
-node_modules
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# logs
+*.log
+
+# environment variables
+.env
+.env.local
+.env.production
+
+# netlify
+.netlify
+
+# OS files
+.DS_Store
+Thumbs.db

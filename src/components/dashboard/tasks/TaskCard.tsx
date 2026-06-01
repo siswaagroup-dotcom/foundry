@@ -4,9 +4,8 @@ import { Calendar } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { Task } from "@/types/task-types";
-
-interface TaskCardProps {
+import { Task } from "../../../../types/task-types";
+ interface TaskCardProps {
   task: Task;
 }
 

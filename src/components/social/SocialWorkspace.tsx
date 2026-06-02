@@ -1,0 +1,72 @@
+"use client";
+
+import { Menu } from "lucide-react";
+
+import { ConnectedAccounts } from "./ConnectedAccounts";
+import { SocialCalendar } from "./SocialCalendar";
+import { SocialFilters } from "./SocialFilters";
+import { SocialHeader } from "./SocialHeader";
+import { SocialListView } from "./SocialListView";
+import { useSocial } from "./hooks/useSocial";
+
+export function SocialWorkspace() {
+  const social = useSocial();
+
+  return (
+    <div className="mx-auto min-h-full max-w-[1110px] bg-white">
+      <div className="space-y-6 px-4 py-5 sm:px-6 lg:px-6">
+        <SocialHeader
+          selectedView={social.selectedView}
+          onViewChange={social.setSelectedView}
+          onCreatePost={() =>
+            console.log("Create Post")
+          }
+        />
+
+        <SocialFilters
+          platforms={social.platformFilters}
+          accounts={social.accountFilters}
+          campaigns={social.campaignFilters}
+          platform={social.platformFilter}
+          account={social.accountFilter}
+          campaign={social.campaignFilter}
+          accountBadge={social.accounts.length}
+          onPlatformChange={social.setPlatformFilter}
+          onAccountChange={social.setAccountFilter}
+          onCampaignChange={social.setCampaignFilter}
+        />
+      </div>
+
+      <div className="grid border-t border-[#E5E7EB] bg-[#f8fafc] lg:grid-cols-[minmax(0,1fr)_240px]">
+        <div className="px-4 py-6 sm:px-6 lg:px-6">
+          {social.selectedView === "calendar" ? (
+            <SocialCalendar
+              monthTitle={social.monthTitle}
+              days={social.calendarDays}
+              selectedDay={social.selectedDay}
+              onSelectDay={social.setSelectedDay}
+              onPreviousMonth={social.previousMonth}
+              onNextMonth={social.nextMonth}
+            />
+          ) : (
+            <SocialListView
+              posts={social.filteredPosts}
+            />
+          )}
+        </div>
+
+        <ConnectedAccounts
+          accounts={social.accounts}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => console.log("Quick Action")}
+        className="fixed bottom-7 right-7 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#f15a24] text-white shadow-[0_8px_18px_rgba(241,90,36,0.28)]"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}

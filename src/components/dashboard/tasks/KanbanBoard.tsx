@@ -9,7 +9,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-import { Task, TaskStatus } from "@/types/task-types";
+import { Task,TaskStatus } from "../../../../types/task-types";
+ 
 import { KanbanColumn } from "./KanbanColumn";
 
 interface KanbanBoardProps {

@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 import { tasks as initialTasks } from "@/data/task-data";
-import { TaskStatus } from "@/types/task-types";
-
+ 
 import { KanbanBoard } from "./KanbanBoard";
 import { TasksFilters } from "./TasksFilters";
 import { TasksHeader } from "./TasksHeader";
+import { TaskStatus } from "../../../../types/task-types";
 
 export function TaskWorkspace() {
   const [tasks, setTasks] = useState(initialTasks);

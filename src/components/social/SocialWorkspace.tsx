@@ -1,6 +1,8 @@
 "use client";
 
 import { Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
 import { ConnectedAccounts } from "./ConnectedAccounts";
 import { SocialCalendar } from "./SocialCalendar";
@@ -10,7 +12,16 @@ import { SocialListView } from "./SocialListView";
 import { useSocial } from "./hooks/useSocial";
 
 export function SocialWorkspace() {
+  const router = useRouter();
   const social = useSocial();
+  const createPost = useCallback(
+    () => router.push("/dashboard/social/create"),
+    [router],
+  );
+  const selectPost = useCallback(
+    (postId: string) => router.push(`/dashboard/social/${postId}`),
+    [router],
+  );
 
   return (
     <div className="mx-auto min-h-full max-w-[1110px] bg-white">
@@ -18,9 +29,7 @@ export function SocialWorkspace() {
         <SocialHeader
           selectedView={social.selectedView}
           onViewChange={social.setSelectedView}
-          onCreatePost={() =>
-            console.log("Create Post")
-          }
+          onCreatePost={createPost}
         />
 
         <SocialFilters
@@ -51,6 +60,7 @@ export function SocialWorkspace() {
           ) : (
             <SocialListView
               posts={social.filteredPosts}
+              onSelectPost={selectPost}
             />
           )}
         </div>
@@ -62,7 +72,7 @@ export function SocialWorkspace() {
 
       <button
         type="button"
-        onClick={() => console.log("Quick Action")}
+        onClick={createPost}
         className="fixed bottom-7 right-7 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#f15a24] text-white shadow-[0_8px_18px_rgba(241,90,36,0.28)]"
       >
         <Menu className="h-5 w-5" />

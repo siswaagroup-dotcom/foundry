@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { Search } from "lucide-react";
 
-export function TasksFilters() {
+export const TasksFilters = memo(function TasksFilters() {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <select className="h-10 rounded-lg border px-3 text-sm">
@@ -25,4 +26,4 @@ export function TasksFilters() {
       </div>
     </div>
   );
-}
+});

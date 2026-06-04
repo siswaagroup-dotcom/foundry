@@ -1,3 +1,5 @@
+import { memo, useMemo } from "react";
+
 import type { Expense } from "@/types/expense";
 
 type ExpensesSummaryProps = {
@@ -8,21 +10,23 @@ function formatCurrency(value: number) {
   return `$${value.toLocaleString()}`;
 }
 
-export function ExpensesSummary({ expenses }: ExpensesSummaryProps) {
-  const totalPlanned = expenses.reduce((sum, expense) => sum + expense.planned, 0);
-  const totalIncurred = expenses.reduce(
-    (sum, expense) => sum + (expense.incurred ?? 0),
-    0,
-  );
-  const variance = totalPlanned - totalIncurred;
-  const usage = totalPlanned ? Math.round((totalIncurred / totalPlanned) * 1000) / 10 : 0;
+export const ExpensesSummary = memo(function ExpensesSummary({ expenses }: ExpensesSummaryProps) {
+  const stats = useMemo(() => {
+    const totalPlanned = expenses.reduce((sum, expense) => sum + expense.planned, 0);
+    const totalIncurred = expenses.reduce(
+      (sum, expense) => sum + (expense.incurred ?? 0),
+      0,
+    );
+    const variance = totalPlanned - totalIncurred;
+    const usage = totalPlanned ? Math.round((totalIncurred / totalPlanned) * 1000) / 10 : 0;
 
-  const stats = [
-    { label: "Total Planned", value: formatCurrency(totalPlanned), tone: "text-sky-500" },
-    { label: "Total Incurred", value: formatCurrency(totalIncurred), tone: "text-orange-600" },
-    { label: "Variance", value: formatCurrency(variance), tone: "text-emerald-500" },
-    { label: "Budget Usage", value: `${usage}%`, tone: "text-slate-950" },
-  ];
+    return [
+      { label: "Total Planned", value: formatCurrency(totalPlanned), tone: "text-sky-500" },
+      { label: "Total Incurred", value: formatCurrency(totalIncurred), tone: "text-orange-600" },
+      { label: "Variance", value: formatCurrency(variance), tone: "text-emerald-500" },
+      { label: "Budget Usage", value: `${usage}%`, tone: "text-slate-950" },
+    ];
+  }, [expenses]);
 
   return (
     <section className="rounded-xl border border-indigo-100/70 bg-indigo-50/80 p-5 shadow-[0_12px_28px_rgba(79,70,229,0.06)]">
@@ -40,4 +44,4 @@ export function ExpensesSummary({ expenses }: ExpensesSummaryProps) {
       </div>
     </section>
   );
-}
+});

@@ -3,7 +3,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Foundry Auth",
+  title: "Foundry",
   description: "Authentication UI for Foundry",
 };
 

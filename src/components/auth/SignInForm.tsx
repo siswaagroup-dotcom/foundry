@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ type SignInFormProps = {
 export function SignInForm({ onForgotPassword }: SignInFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const {
     control,
     formState: { errors },
@@ -37,15 +37,13 @@ export function SignInForm({ onForgotPassword }: SignInFormProps) {
     },
   });
 
-  async function onSubmit(values: SignInValues) {
-    setIsLoading(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 600));
+  function onSubmit(values: SignInValues) {
     toast({
       title: "Signed in successfully",
       description: `Welcome back to Foundry, ${values.email}.`,
       variant: "success",
     });
-    router.push("/dashboard");
+    startTransition(() => router.replace("/dashboard"));
   }
 
   return (
@@ -110,7 +108,7 @@ export function SignInForm({ onForgotPassword }: SignInFormProps) {
             render={({ field }) => (
           <Checkbox
                 id="remember"
-                disabled={isLoading}
+                disabled={isPending}
                 checked={field.value}
                 onCheckedChange={field.onChange}
               />
@@ -128,7 +126,7 @@ export function SignInForm({ onForgotPassword }: SignInFormProps) {
         <button
           type="button"
           onClick={onForgotPassword}
-          disabled={isLoading}
+          disabled={isPending}
           className="text-xs font-medium text-primary"
         >
           Forgot password?
@@ -138,10 +136,10 @@ export function SignInForm({ onForgotPassword }: SignInFormProps) {
       {/* Submit */}
       <Button
         type="submit"
-        disabled={isLoading}
+        disabled={isPending}
         className="h-10 w-full gap-2 text-sm sm:h-11 lg:h-12"
       >
-        {isLoading ? "Signing in..." : "Sign In"}
+        {isPending ? "Signing in..." : "Sign In"}
         <ArrowRight className="h-4 w-4" />
       </Button>
     </form>

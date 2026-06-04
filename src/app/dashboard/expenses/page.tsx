@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ExpensesFilters } from "@/components/expenses/ExpensesFilters";
 import { ExpensesHeader } from "@/components/expenses/ExpensesHeader";
 import { ExpensesSummary } from "@/components/expenses/ExpensesSummary";
@@ -41,6 +41,7 @@ const savedFilterMap: Record<
 };
 
 export default function ExpensesPage() {
+  const router = useRouter();
   const [filters, setFilters] =
     useState(defaultFilters);
 
@@ -82,45 +83,55 @@ export default function ExpensesPage() {
     });
   }, [filters]);
 
-  function selectSavedFilter(filter: string) {
+  const selectSavedFilter = useCallback((filter: string) => {
     setActiveSavedFilter(filter);
 
     setFilters({
       ...defaultFilters,
       ...savedFilterMap[filter],
     });
-  }
+  }, []);
+  const createExpense = useCallback(
+    () => router.push("/dashboard/expenses/create"),
+    [router],
+  );
+  const selectExpense = useCallback(
+    (expense: { id: string }) => router.push(`/dashboard/expenses/${expense.id}`),
+    [router],
+  );
+  const changeFilters = useCallback((nextFilters: ExpenseFilters) => {
+    setFilters(nextFilters);
+    setActiveSavedFilter("");
+  }, []);
 
   return (
-    <DashboardShell>
-      <div className="mx-auto max-w-[1400px] space-y-4">
-        <ExpensesHeader />
+    <div className="mx-auto max-w-[1400px] space-y-4">
+      <ExpensesHeader
+        onCreateExpense={createExpense}
+      />
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_260px]">
-          <div className="space-y-4">
-            <ExpensesFilters
-              filters={filters}
-              onChange={(nextFilters) => {
-                setFilters(nextFilters);
-                setActiveSavedFilter("");
-              }}
-            />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="space-y-4">
+          <ExpensesFilters
+            filters={filters}
+            onChange={changeFilters}
+          />
 
-            <ExpensesSummary
-              expenses={expenses}
-            />
+          <ExpensesSummary
+            expenses={expenses}
+          />
 
-            <ExpensesTable
-              expenses={filteredExpenses}
-            />
-          </div>
-
-          <SavedFilters
-            activeFilter={activeSavedFilter}
-            onSelect={selectSavedFilter}
+          <ExpensesTable
+            expenses={filteredExpenses}
+            onSelectExpense={selectExpense}
           />
         </div>
+
+        <SavedFilters
+          activeFilter={activeSavedFilter}
+          onSelect={selectSavedFilter}
+        />
       </div>
-    </DashboardShell>
+    </div>
   );
 }

@@ -1,8 +1,11 @@
+import { memo } from "react";
+
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import type { Expense } from "@/types/expense";
 
 type ExpensesTableProps = {
   expenses: Expense[];
+  onSelectExpense?: (expense: Expense) => void;
 };
 
 const headers = [
@@ -15,7 +18,10 @@ const headers = [
   "Variance",
 ];
 
-export function ExpensesTable({ expenses }: ExpensesTableProps) {
+export const ExpensesTable = memo(function ExpensesTable({
+  expenses,
+  onSelectExpense,
+}: ExpensesTableProps) {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
       <div className="hidden border-b border-slate-100 bg-slate-50/90 px-4 py-4 lg:grid lg:grid-cols-[1.35fr_0.8fr_0.8fr_0.75fr_0.75fr_0.75fr_0.75fr]">
@@ -30,9 +36,13 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
       </div>
       <div>
         {expenses.map((expense) => (
-          <ExpenseRow key={expense.id} expense={expense} />
+          <ExpenseRow
+            key={expense.id}
+            expense={expense}
+            onSelect={onSelectExpense}
+          />
         ))}
       </div>
     </section>
   );
-}
+});

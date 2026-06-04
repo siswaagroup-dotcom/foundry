@@ -1,3 +1,5 @@
+import { memo, useCallback } from "react";
+import type { ChangeEvent } from "react";
 import { Check, Search } from "lucide-react";
 
 import type {
@@ -13,22 +15,26 @@ type ClientsFiltersProps = {
   onFilterChange: (filter: ClientFilterId) => void;
 };
 
-export function ClientsFilters({
+export const ClientsFilters = memo(function ClientsFilters({
   filters,
   activeFilter,
   search,
   onSearchChange,
   onFilterChange,
 }: ClientsFiltersProps) {
+  const handleSearchChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) =>
+      onSearchChange(event.target.value),
+    [onSearchChange],
+  );
+
   return (
     <section className="space-y-1.5">
       <div className="relative w-full max-w-[360px]">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
         <input
           value={search}
-          onChange={(event) =>
-            onSearchChange(event.target.value)
-          }
+          onChange={handleSearchChange}
           placeholder="Search clients..."
           className="h-9 w-full rounded-md border border-[#E5E7EB] bg-white pl-9 pr-3 text-[12px] text-[#111827] outline-none placeholder:text-[#6b7280] focus:border-[#f15a24] focus:ring-2 focus:ring-[#f15a24]/10"
         />
@@ -61,4 +67,4 @@ export function ClientsFilters({
       </div>
     </section>
   );
-}
+});

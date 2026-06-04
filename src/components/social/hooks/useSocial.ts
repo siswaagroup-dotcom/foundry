@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { socialAccounts } from "../data/social-accounts";
 import { campaignFilters, platformFilters } from "../data/social-filters";
@@ -23,6 +23,18 @@ function buildCalendar(
   const monthIndex = month.getMonth();
   const firstDay = new Date(year, monthIndex, 1);
   const start = new Date(year, monthIndex, 1 - firstDay.getDay());
+  const postsByDate = new Map<string, typeof socialPosts>();
+
+  posts.forEach((post) => {
+    const current = postsByDate.get(post.date);
+
+    if (current) {
+      current.push(post);
+      return;
+    }
+
+    postsByDate.set(post.date, [post]);
+  });
 
   return Array.from({ length: 42 }, (_, index) => {
     const date = new Date(start);
@@ -32,7 +44,7 @@ function buildCalendar(
     return {
       key, date, day: date.getDate(),
       inMonth: date.getMonth() === monthIndex,
-      posts: posts.filter((post) => post.date === key),
+      posts: postsByDate.get(key) ?? [],
     };
   });
 }
@@ -69,10 +81,23 @@ export function useSocial() {
     () => buildCalendar(currentMonth, filteredPosts),
     [currentMonth, filteredPosts]
   );
+  const monthTitle = useMemo(
+    () =>
+      currentMonth.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+    [currentMonth],
+  );
+  const nextMonth = useCallback(() => {
+    setCurrentMonth((month) => addMonths(month, 1));
+  }, []);
+  const previousMonth = useCallback(() => {
+    setCurrentMonth((month) => addMonths(month, -1));
+  }, []);
+
   return {
-    monthTitle: currentMonth.toLocaleString("en-US", {
-      month: "long", year: "numeric",
-    }),
+    monthTitle,
     selectedView,
     setSelectedView,
     platformFilter,
@@ -89,7 +114,7 @@ export function useSocial() {
     platformFilters,
     accountFilters,
     campaignFilters,
-    nextMonth: () => setCurrentMonth(addMonths(currentMonth, 1)),
-    previousMonth: () => setCurrentMonth(addMonths(currentMonth, -1)),
+    nextMonth,
+    previousMonth,
   };
 }

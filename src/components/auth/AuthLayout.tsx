@@ -1,5 +1,3 @@
-"use client";
-
 import { AuthCard } from "@/components/auth/AuthCard";
 import { HeroSection } from "@/components/landing/HeroSection";
 

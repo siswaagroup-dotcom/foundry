@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import { expenseFilterOptions } from "@/data/expenses";
 import type { ExpenseFilters } from "@/types/expense";
@@ -9,7 +10,7 @@ type ExpensesFiltersProps = {
   onChange: (filters: ExpenseFilters) => void;
 };
 
-function FilterSelect({
+const FilterSelect = memo(function FilterSelect({
   label,
   value,
   options,
@@ -39,9 +40,26 @@ function FilterSelect({
       </span>
     </label>
   );
-}
+});
 
-export function ExpensesFilters({ filters, onChange }: ExpensesFiltersProps) {
+export const ExpensesFilters = memo(function ExpensesFilters({ filters, onChange }: ExpensesFiltersProps) {
+  const updateStatus = useCallback(
+    (status: string) => onChange({ ...filters, status }),
+    [filters, onChange],
+  );
+  const updateCategory = useCallback(
+    (category: string) => onChange({ ...filters, category }),
+    [filters, onChange],
+  );
+  const updateDateRange = useCallback(
+    (dateRange: string) => onChange({ ...filters, dateRange }),
+    [filters, onChange],
+  );
+  const updateAmountRange = useCallback(
+    (amountRange: string) => onChange({ ...filters, amountRange }),
+    [filters, onChange],
+  );
+
   return (
     <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)] sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -49,27 +67,27 @@ export function ExpensesFilters({ filters, onChange }: ExpensesFiltersProps) {
           label="Status"
           value={filters.status}
           options={expenseFilterOptions.status}
-          onChange={(status) => onChange({ ...filters, status })}
+          onChange={updateStatus}
         />
         <FilterSelect
           label="Category"
           value={filters.category}
           options={expenseFilterOptions.category}
-          onChange={(category) => onChange({ ...filters, category })}
+          onChange={updateCategory}
         />
         <FilterSelect
           label="Date Range"
           value={filters.dateRange}
           options={expenseFilterOptions.dateRange}
-          onChange={(dateRange) => onChange({ ...filters, dateRange })}
+          onChange={updateDateRange}
         />
         <FilterSelect
           label="Amount Range"
           value={filters.amountRange}
           options={expenseFilterOptions.amountRange}
-          onChange={(amountRange) => onChange({ ...filters, amountRange })}
+          onChange={updateAmountRange}
         />
       </div>
     </section>
   );
-}
+});

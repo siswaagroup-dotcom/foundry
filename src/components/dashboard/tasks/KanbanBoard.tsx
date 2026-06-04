@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback, useMemo } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -9,9 +10,11 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-import { Task,TaskStatus } from "../../../../types/task-types";
+import { Task, TaskStatus } from "../../../../types/task-types";
  
 import { KanbanColumn } from "./KanbanColumn";
+
+const validStatuses: TaskStatus[] = ["todo", "planning", "doing", "review"];
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -19,74 +22,57 @@ interface KanbanBoardProps {
     taskId: string,
     newStatus: TaskStatus
   ) => void;
+  onTaskOpen: (taskId: string) => void;
 }
 
-export function KanbanBoard({
+export const KanbanBoard = memo(function KanbanBoard({
   tasks,
   onTaskMove,
+  onTaskOpen,
 }: KanbanBoardProps) {
-  const sensors = useSensors(
-    useSensor(PointerSensor)
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: { distance: 6 },
+  });
+  const sensors = useSensors(pointerSensor);
+
+  const columns = useMemo(
+    () => ({
+      todo: tasks.filter((task) => task.status === "todo"),
+      planning: tasks.filter((task) => task.status === "planning"),
+      doing: tasks.filter((task) => task.status === "doing"),
+      review: tasks.filter((task) => task.status === "review"),
+    }),
+    [tasks],
   );
 
-  const todo = tasks.filter(
-    (task) => task.status === "todo"
+  const taskById = useMemo(
+    () => new Map(tasks.map((task) => [task.id, task])),
+    [tasks],
   );
 
-  const planning = tasks.filter(
-    (task) => task.status === "planning"
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (!over) return;
+
+      const activeTask = taskById.get(String(active.id));
+
+      if (!activeTask) return;
+
+      const overTask = taskById.get(String(over.id));
+
+      if (overTask) {
+        onTaskMove(activeTask.id, overTask.status);
+        return;
+      }
+
+      if (validStatuses.includes(over.id as TaskStatus)) {
+        onTaskMove(activeTask.id, over.id as TaskStatus);
+      }
+    },
+    [onTaskMove, taskById],
   );
-
-  const doing = tasks.filter(
-    (task) => task.status === "doing"
-  );
-
-  const review = tasks.filter(
-    (task) => task.status === "review"
-  );
-function handleDragEnd(event: DragEndEvent) {
-  const { active, over } = event;
-
-  if (!over) return;
-
-  const activeTask = tasks.find(
-    (task) => task.id === active.id
-  );
-
-  if (!activeTask) return;
-
-  // Dropped on another task card
-  const overTask = tasks.find(
-    (task) => task.id === over.id
-  );
-
-  if (overTask) {
-    onTaskMove(
-      activeTask.id,
-      overTask.status
-    );
-    return;
-  }
-
-  // Dropped on a column
-  const validStatuses: TaskStatus[] = [
-    "todo",
-    "planning",
-    "doing",
-    "review",
-  ];
-
-  if (
-    validStatuses.includes(
-      over.id as TaskStatus
-    )
-  ) {
-    onTaskMove(
-      activeTask.id,
-      over.id as TaskStatus
-    );
-  }
-}
 
   return (
     <DndContext
@@ -99,28 +85,32 @@ function handleDragEnd(event: DragEndEvent) {
           <KanbanColumn
             id="todo"
             title="To Do"
-            tasks={todo}
+            tasks={columns.todo}
+            onTaskOpen={onTaskOpen}
           />
 
           <KanbanColumn
             id="planning"
             title="Planning"
-            tasks={planning}
+            tasks={columns.planning}
+            onTaskOpen={onTaskOpen}
           />
 
           <KanbanColumn
             id="doing"
             title="Doing"
-            tasks={doing}
+            tasks={columns.doing}
+            onTaskOpen={onTaskOpen}
           />
 
           <KanbanColumn
             id="review"
             title="Review"
-            tasks={review}
+            tasks={columns.review}
+            onTaskOpen={onTaskOpen}
           />
         </div>
       </div>
     </DndContext>
   );
-}
+});

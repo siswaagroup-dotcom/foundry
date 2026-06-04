@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback, useMemo } from "react";
 import { Calendar } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -7,9 +8,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { Task } from "../../../../types/task-types";
  interface TaskCardProps {
   task: Task;
+  onOpen: (taskId: string) => void;
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export const TaskCard = memo(function TaskCard({ task, onOpen }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -24,10 +26,14 @@ export function TaskCard({ task }: TaskCardProps) {
     },
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }),
+    [transform, transition],
+  );
+  const openTask = useCallback(() => onOpen(task.id), [onOpen, task.id]);
 
   return (
     <div
@@ -35,6 +41,7 @@ export function TaskCard({ task }: TaskCardProps) {
       style={style}
       {...attributes}
       {...listeners}
+      onDoubleClick={openTask}
       className={`
         rounded-xl border bg-white p-4 shadow-sm
         transition-all duration-200
@@ -83,4 +90,4 @@ export function TaskCard({ task }: TaskCardProps) {
       </div>
     </div>
   );
-}
+});

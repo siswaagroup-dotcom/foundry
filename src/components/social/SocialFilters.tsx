@@ -3,6 +3,7 @@ import {
   ChevronsLeftRight,
   SlidersHorizontal,
 } from "lucide-react";
+import { memo } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ type SocialFiltersProps = {
   onCampaignChange: (value: string) => void;
 };
 
-function FilterSelect({
+const FilterSelect = memo(function FilterSelect({
   icon,
   value,
   options,
@@ -62,9 +63,9 @@ function FilterSelect({
       ) : null}
     </label>
   );
-}
+});
 
-export function SocialFilters(props: SocialFiltersProps) {
+export const SocialFilters = memo(function SocialFilters(props: SocialFiltersProps) {
   return (
     <section className="flex flex-wrap gap-3">
       <FilterSelect
@@ -92,4 +93,4 @@ export function SocialFilters(props: SocialFiltersProps) {
       />
     </section>
   );
-}
+});

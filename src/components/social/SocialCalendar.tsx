@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { CalendarDay } from "./CalendarDay";
@@ -14,7 +15,7 @@ type SocialCalendarProps = {
   onNextMonth: () => void;
 };
 
-export function SocialCalendar({
+export const SocialCalendar = memo(function SocialCalendar({
   monthTitle,
   days,
   selectedDay,
@@ -67,4 +68,4 @@ export function SocialCalendar({
       </div>
     </section>
   );
-}
+});

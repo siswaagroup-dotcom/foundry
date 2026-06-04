@@ -1,5 +1,5 @@
 import { Calendar, FolderKanban } from "lucide-react";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import Link from "next/link";
 import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -35,7 +35,7 @@ function currency(value: number) {
 
 export default function DashboardPage() {
   return (
-     <DashboardShell showHeader>
+     <>
       <div className="mx-auto grid max-w-[1500px] gap-4 xl:grid-cols-[1fr_340px]">
         <div className="space-y-4">
           <DashboardCard
@@ -97,9 +97,12 @@ export default function DashboardPage() {
           <DashboardCard
             title="Overdue Items"
             action={
-              <button className="text-xs font-medium text-primary">
+              <Link
+                href="/dashboard/tasks"
+                className="text-xs font-medium text-primary"
+              >
                 View all
-              </button>
+              </Link>
             }
           >
             <div className="divide-y divide-[#edf0f3]">
@@ -171,8 +174,9 @@ export default function DashboardPage() {
 
             <div className="divide-y divide-[#edf0f3]">
               {expenses.map((expense) => (
-                <div
+                <Link
                   key={expense.id}
+                  href={`/dashboard/expenses/${expense.id}`}
                   className="flex items-center justify-between py-3"
                 >
                   <div>
@@ -194,7 +198,7 @@ export default function DashboardPage() {
                       {expense.status}
                     </StatusBadge>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </DashboardCard>
@@ -312,8 +316,9 @@ export default function DashboardPage() {
           <DashboardCard title="Recent Clients">
             <div className="space-y-3">
               {clients.map((client) => (
-                <div
+                <Link
                   key={client.id}
+                  href="/dashboard/clients/acme-corporation"
                   className="rounded-xl bg-[#f8fafc] p-3"
                 >
                   <div className="flex items-center justify-between">
@@ -339,12 +344,12 @@ export default function DashboardPage() {
                   <p className="mt-2 text-sm font-bold">
                     {currency(client.revenue)}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </DashboardCard>
         </aside>
       </div>
-    </DashboardShell>
+    </>
   );
 }

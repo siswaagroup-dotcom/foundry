@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AUTH_COPY } from "@/constants/auth";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
@@ -13,32 +14,49 @@ import { SocialLogin } from "@/components/auth/SocialLogin";
 import type { AuthMode, AuthTabMode } from "@/types/auth";
 
 export function AuthCard() {
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("signin");
   const isTabbedMode = mode === "signin" || mode === "signup";
   const copy = AUTH_COPY[mode];
 
-  function handleTabChange(value: AuthTabMode) {
+  useEffect(() => {
+    router.prefetch("/dashboard");
+  }, [router]);
+
+  const handleTabChange = useCallback((value: AuthTabMode) => {
     setMode(value);
-  }
+  }, []);
+
+  const showForgotPassword = useCallback(() => {
+    setMode("forgot");
+  }, []);
+
+  const showSignIn = useCallback(() => {
+    setMode("signin");
+  }, []);
+
+  const showReset = useCallback(() => {
+    setMode("reset");
+  }, []);
 
   function renderForm() {
     switch (mode) {
       case "signin":
-        return <SignInForm onForgotPassword={() => setMode("forgot")} />;
+        return <SignInForm onForgotPassword={showForgotPassword} />;
       case "signup":
         return <SignUpForm />;
       case "forgot":
         return (
           <ForgotPasswordForm
-            onBack={() => setMode("signin")}
-            onSent={() => setMode("reset")}
+            onBack={showSignIn}
+            onSent={showReset}
           />
         );
       case "reset":
         return (
           <ResetPasswordForm
-            onBack={() => setMode("forgot")}
-            onComplete={() => setMode("signin")}
+            onBack={showForgotPassword}
+            onComplete={showSignIn}
           />
         );
       default:

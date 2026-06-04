@@ -1,3 +1,5 @@
+import { memo, useCallback } from "react";
+
 import { cn } from "@/lib/utils";
 
 import type { CalendarDayData } from "./types/social-types";
@@ -8,17 +10,18 @@ type CalendarDayProps = {
   onSelect: (date: string) => void;
 };
 
-export function CalendarDay({
+export const CalendarDay = memo(function CalendarDay({
   day,
   selectedDay,
   onSelect,
 }: CalendarDayProps) {
   const selected = day.key === selectedDay;
+  const selectDay = useCallback(() => onSelect(day.key), [day.key, onSelect]);
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(day.key)}
+      onClick={selectDay}
       className="min-h-[95px] border-r border-t border-[#E5E7EB] bg-white p-2 text-left last:border-r-0"
     >
       <span
@@ -44,4 +47,4 @@ export function CalendarDay({
       </div>
     </button>
   );
-}
+});

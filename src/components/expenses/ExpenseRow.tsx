@@ -1,9 +1,11 @@
+import { memo } from "react";
 import type { ReactNode } from "react";
 import type { Expense, ExpenseStatus } from "@/types/expense";
 import { cn } from "@/lib/utils";
 
 type ExpenseRowProps = {
   expense: Expense;
+  onSelect?: (expense: Expense) => void;
 };
 
 const statusStyles: Record<ExpenseStatus, string> = {
@@ -27,11 +29,19 @@ function formatVariance(expense: Expense) {
   return `${prefix}$${Math.abs(variance).toLocaleString()}`;
 }
 
-export function ExpenseRow({ expense }: ExpenseRowProps) {
+export const ExpenseRow = memo(function ExpenseRow({ expense, onSelect }: ExpenseRowProps) {
   const variance = expense.incurred === null ? null : expense.planned - expense.incurred;
 
   return (
-    <div className="grid gap-3 border-b border-slate-100 bg-white px-4 py-4 transition hover:bg-slate-50/80 lg:grid-cols-[1.35fr_0.8fr_0.8fr_0.75fr_0.75fr_0.75fr_0.75fr] lg:items-center">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect?.(expense)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") onSelect?.(expense);
+      }}
+      className="grid cursor-pointer gap-3 border-b border-slate-100 bg-white px-4 py-4 transition hover:bg-slate-50/80 lg:grid-cols-[1.35fr_0.8fr_0.8fr_0.75fr_0.75fr_0.75fr_0.75fr] lg:items-center"
+    >
       <div className="min-w-0">
         <p className="text-sm font-bold leading-5 text-slate-950">{expense.name}</p>
         <p className="mt-1 text-xs font-medium text-slate-500">{expense.detail}</p>
@@ -71,7 +81,7 @@ export function ExpenseRow({ expense }: ExpenseRowProps) {
       </div>
     </div>
   );
-}
+});
 
 function MobileLabel({ children }: { children: ReactNode }) {
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { SlidersHorizontal, Star } from "lucide-react";
 import { savedExpenseFilters } from "@/data/expenses";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ type SavedFiltersProps = {
   onSelect: (filter: string) => void;
 };
 
-export function SavedFilters({ activeFilter, onSelect }: SavedFiltersProps) {
+export const SavedFilters = memo(function SavedFilters({ activeFilter, onSelect }: SavedFiltersProps) {
   return (
     <aside className="rounded-xl border border-slate-100 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)] lg:sticky lg:top-6">
       <div className="flex items-center gap-2 text-sm font-bold text-slate-950">
@@ -39,4 +40,4 @@ export function SavedFilters({ activeFilter, onSelect }: SavedFiltersProps) {
       </div>
     </aside>
   );
-}
+});

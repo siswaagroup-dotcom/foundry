@@ -8,6 +8,15 @@ const config: Config = {
     "./src/components/**/*.{ts,tsx}",
     "./src/app/**/*.{ts,tsx}",
     "./src/lib/**/*.{ts,tsx}",
+    "./clients/**/*.{ts,tsx}",
+    "./team/**/*.{ts,tsx}",
+    "./settings/**/*.{ts,tsx}",
+    "./task-details/**/*.{ts,tsx}",
+    "./expense-detail/**/*.{ts,tsx}",
+    "./social-post-detail/**/*.{ts,tsx}",
+    "./create-post/**/*.{ts,tsx}",
+    "./create-expense/**/*.{ts,tsx}",
+    "./create-task/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {

@@ -1,4 +1,5 @@
 import { Calendar, List, Plus } from "lucide-react";
+import { memo } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,7 +11,7 @@ type SocialHeaderProps = {
   onCreatePost: () => void;
 };
 
-export function SocialHeader({
+export const SocialHeader = memo(function SocialHeader({
   selectedView,
   onViewChange,
   onCreatePost,
@@ -55,4 +56,4 @@ export function SocialHeader({
       </div>
     </header>
   );
-}
+});

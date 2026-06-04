@@ -1,11 +1,14 @@
+import { memo } from "react";
 import type { SocialPost } from "./types/social-types";
 
 type SocialListViewProps = {
   posts: SocialPost[];
+  onSelectPost?: (postId: string) => void;
 };
 
-export function SocialListView({
+export const SocialListView = memo(function SocialListView({
   posts,
+  onSelectPost,
 }: SocialListViewProps) {
   return (
     <section className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -20,7 +23,13 @@ export function SocialListView({
         {posts.map((post) => (
           <article
             key={post.id}
-            className="grid gap-2 border-t border-[#EEF0F3] bg-white px-5 py-4 text-[12px] md:grid-cols-[1fr_120px_130px_120px] md:items-center md:gap-4"
+            role="button"
+            tabIndex={0}
+            onClick={() => onSelectPost?.(post.id)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onSelectPost?.(post.id);
+            }}
+            className="grid cursor-pointer gap-2 border-t border-[#EEF0F3] bg-white px-5 py-4 text-[12px] transition hover:bg-[#fafafa] md:grid-cols-[1fr_120px_130px_120px] md:items-center md:gap-4"
           >
             <div>
               <p className="font-bold text-[#020617]">
@@ -44,4 +53,4 @@ export function SocialListView({
       </div>
     </section>
   );
-}
+});

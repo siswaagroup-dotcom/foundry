@@ -9,6 +9,10 @@ export type Client = {
   initials: string;
   name: string;
   industry: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  clientSince?: string;
   contact: string;
   activity: string;
   activityTone: "green" | "yellow" | "gray";

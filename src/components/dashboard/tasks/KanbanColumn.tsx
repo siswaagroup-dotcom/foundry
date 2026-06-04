@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -13,16 +14,19 @@ interface KanbanColumnProps {
   id: string;
   title: string;
   tasks: Task[];
+  onTaskOpen: (taskId: string) => void;
 }
 
-export function KanbanColumn({
+export const KanbanColumn = memo(function KanbanColumn({
   id,
   title,
   tasks,
+  onTaskOpen,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
+  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
 
   return (
     <div
@@ -53,7 +57,7 @@ export function KanbanColumn({
       </div>
 
       <SortableContext
-        items={tasks.map((task) => task.id)}
+        items={taskIds}
         strategy={verticalListSortingStrategy}
       >
         <div className="min-h-[450px] space-y-4 p-3">
@@ -61,10 +65,11 @@ export function KanbanColumn({
             <TaskCard
               key={task.id}
               task={task}
+              onOpen={onTaskOpen}
             />
           ))}
         </div>
       </SortableContext>
     </div>
   );
-}
+});

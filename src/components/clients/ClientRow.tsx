@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ArrowUpRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,13 +21,23 @@ const dotClass = {
   gray: "bg-[#c7cdd6]",
 };
 
-export function ClientRow({
+export const ClientRow = memo(function ClientRow({
   client,
+  onSelect,
 }: {
   client: Client;
+  onSelect?: (client: Client) => void;
 }) {
   return (
-    <article className="grid min-h-[72px] grid-cols-1 gap-3 border-t border-[#EEF0F3] bg-white px-5 py-4 md:grid-cols-[1.25fr_0.8fr_0.65fr_0.85fr_24px] md:items-center md:gap-4">
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect?.(client)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") onSelect?.(client);
+      }}
+      className="grid min-h-[72px] cursor-pointer grid-cols-1 gap-3 border-t border-[#EEF0F3] bg-white px-5 py-4 transition hover:bg-[#fafafa] md:grid-cols-[1.25fr_0.8fr_0.65fr_0.85fr_24px] md:items-center md:gap-4"
+    >
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[linear-gradient(135deg,#df672d,#4fb6d4)] text-[15px] font-bold text-white">
           {client.initials}
@@ -72,4 +83,4 @@ export function ClientRow({
       <ArrowUpRight className="hidden h-4 w-4 text-[#64748b] md:block" />
     </article>
   );
-}
+});

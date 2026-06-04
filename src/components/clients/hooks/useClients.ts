@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 
 import { clientFilters } from "../data/client-filters";
 import { clients } from "../data/clients-data";
@@ -36,6 +36,7 @@ export function useClients() {
   const [activeSavedFilter, setActiveSavedFilter] = useState<
     SavedClientFilterId | null
   >(null);
+  const deferredSearch = useDeferredValue(search);
 
   const filteredClients = useMemo(() => {
     const tab = clientFilters.find(
@@ -44,7 +45,7 @@ export function useClients() {
     const saved = savedClientFilters.find(
       (filter) => filter.id === activeSavedFilter
     );
-    const term = search.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
 
     return clients.filter((client) => {
       const matchesSearch =
@@ -57,17 +58,17 @@ export function useClients() {
         matchesCriteria(client, saved?.criteria ?? {})
       );
     });
-  }, [activeFilter, activeSavedFilter, search]);
+  }, [activeFilter, activeSavedFilter, deferredSearch]);
 
-  function selectFilter(filter: ClientFilterId) {
+  const selectFilter = useCallback((filter: ClientFilterId) => {
     setActiveFilter(filter);
     setActiveSavedFilter(null);
-  }
+  }, []);
 
-  function selectSavedFilter(filter: SavedClientFilterId) {
+  const selectSavedFilter = useCallback((filter: SavedClientFilterId) => {
     setActiveFilter("all");
     setActiveSavedFilter(filter);
-  }
+  }, []);
 
   return {
     search,

@@ -1,12 +1,16 @@
+import { memo } from "react";
+
 import { ClientRow } from "./ClientRow";
 import type { Client } from "./types/client-types";
 
 type ClientsTableProps = {
   clients: Client[];
+  onSelectClient?: (client: Client) => void;
 };
 
-export function ClientsTable({
+export const ClientsTable = memo(function ClientsTable({
   clients,
+  onSelectClient,
 }: ClientsTableProps) {
   return (
     <section className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -23,9 +27,10 @@ export function ClientsTable({
           <ClientRow
             key={client.id}
             client={client}
+            onSelect={onSelectClient}
           />
         ))}
       </div>
     </section>
   );
-}
+});

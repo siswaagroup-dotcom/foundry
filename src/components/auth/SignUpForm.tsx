@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Lock, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import type { SignUpValues } from "@/types/auth";
 export function SignUpForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const {
     control,
     formState: { errors },
@@ -34,15 +34,13 @@ export function SignUpForm() {
     },
   });
 
-  async function onSubmit(values: SignUpValues) {
-    setIsLoading(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
+  function onSubmit(values: SignUpValues) {
     toast({
       title: "Account created",
       description: `Your Foundry workspace is ready, ${values.name}.`,
       variant: "success",
     });
-    router.push("/dashboard");
+    startTransition(() => router.replace("/dashboard"));
   }
 
   return (
@@ -131,7 +129,7 @@ export function SignUpForm() {
             render={({ field }) => (
               <Checkbox
                 id="terms"
-                disabled={isLoading}
+                disabled={isPending}
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 className="mt-0.5"
@@ -155,10 +153,10 @@ export function SignUpForm() {
       {/* Submit */}
       <Button
         type="submit"
-        disabled={isLoading}
+        disabled={isPending}
         className="h-10 w-full gap-2 text-sm sm:h-11 lg:h-12"
       >
-        {isLoading ? "Creating account..." : "Create Account"}
+        {isPending ? "Creating account..." : "Create Account"}
         <ArrowRight className="h-4 w-4" />
       </Button>
     </form>

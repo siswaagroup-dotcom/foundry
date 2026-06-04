@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import { cn } from "@/lib/utils";
 
 import type {
@@ -11,7 +13,7 @@ type SavedFiltersProps = {
   onSelect: (filter: SavedClientFilterId) => void;
 };
 
-export function SavedFilters({
+export const SavedFilters = memo(function SavedFilters({
   filters,
   activeFilter,
   onSelect,
@@ -45,4 +47,4 @@ export function SavedFilters({
       </div>
     </aside>
   );
-}
+});

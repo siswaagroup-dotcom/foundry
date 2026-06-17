@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { AUTH_COPY } from "@/constants/auth";
-import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthTabs } from "@/components/auth/AuthTabs";
 import { Divider } from "@/components/auth/Divider";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
@@ -16,6 +17,9 @@ import type { AuthMode, AuthTabMode } from "@/types/auth";
 export function AuthCard() {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("signin");
+  // Stores the dev reset token passed back from ForgotPasswordForm
+  const [pendingResetToken, setPendingResetToken] = useState<string | undefined>();
+
   const isTabbedMode = mode === "signin" || mode === "signup";
   const copy = AUTH_COPY[mode];
 
@@ -32,10 +36,14 @@ export function AuthCard() {
   }, []);
 
   const showSignIn = useCallback(() => {
+    setPendingResetToken(undefined);
     setMode("signin");
   }, []);
 
-  const showReset = useCallback(() => {
+  // Called by ForgotPasswordForm after the API call succeeds.
+  // In dev, the API returns the raw token so the user doesn't need email.
+  const showReset = useCallback((resetToken?: string) => {
+    setPendingResetToken(resetToken);
     setMode("reset");
   }, []);
 
@@ -57,6 +65,7 @@ export function AuthCard() {
           <ResetPasswordForm
             onBack={showForgotPassword}
             onComplete={showSignIn}
+            resetToken={pendingResetToken}
           />
         );
       default:
@@ -75,7 +84,12 @@ export function AuthCard() {
       ) : null}
 
       <div className="min-h-0">
-        <div key={mode} className={isTabbedMode ? "auth-fade-in mt-3 sm:mt-4" : "auth-fade-in mt-4"}>
+        <div
+          key={mode}
+          className={
+            isTabbedMode ? "auth-fade-in mt-3 sm:mt-4" : "auth-fade-in mt-4"
+          }
+        >
           {renderForm()}
         </div>
       </div>
@@ -85,7 +99,6 @@ export function AuthCard() {
           <div className="mt-3 sm:mt-4">
             <Divider />
           </div>
-
           <div className="mt-2.5 sm:mt-3">
             <SocialLogin />
           </div>

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { ToastProvider } from "@/components/ui/toast";
+
+import { AppProviders } from "@/app/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Foundry",
-  description: "Authentication UI for Foundry",
+  description: "The all-in-one business operating system.",
 };
 
 export default function RootLayout({
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ToastProvider>{children}</ToastProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

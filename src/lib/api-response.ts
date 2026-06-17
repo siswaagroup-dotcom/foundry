@@ -1,0 +1,15 @@
+// =============================================================================
+// API RESPONSE HELPERS — standard envelope for all route handlers
+// =============================================================================
+import { NextResponse } from "next/server";
+
+export function apiSuccess<T>(data: T, status = 200) {
+  return NextResponse.json({ success: true, data }, { status });
+}
+
+export function apiError(message: string, status: number, code?: string) {
+  return NextResponse.json(
+    { success: false, error: { message, code: code ?? "ERROR" } },
+    { status }
+  );
+}

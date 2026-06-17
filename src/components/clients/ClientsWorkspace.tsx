@@ -19,6 +19,7 @@ export function ClientsWorkspace() {
     filteredClients,
     clientFilters,
     savedClientFilters,
+    isLoading,
     selectFilter,
     selectSavedFilter,
   } = useClients();
@@ -48,10 +49,18 @@ export function ClientsWorkspace() {
 
       <div className="grid border-t border-[#E5E7EB] lg:grid-cols-[minmax(0,1fr)_260px]">
         <div className="px-4 py-5 sm:px-6 lg:px-6">
-          <ClientsTable
-            clients={filteredClients}
-            onSelectClient={selectClient}
-          />
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-[#f3f4f6]" />
+              ))}
+            </div>
+          ) : (
+            <ClientsTable
+              clients={filteredClients}
+              onSelectClient={selectClient}
+            />
+          )}
         </div>
 
         <SavedFilters

@@ -7,10 +7,39 @@ import { ReviewersSection } from "./ReviewersSection";
 import { StageAssignment } from "./StageAssignment";
 import { TaskHeader } from "./TaskHeader";
 import { TaskInfoCard } from "./TaskInfoCard";
+import { CommentSection } from "./CommentSection";
 import { useTaskDetails } from "./hooks/useTaskDetails";
 
 export function TaskDetailsWorkspace() {
   const state = useTaskDetails();
+
+  // ── Loading state ────────────────────────────────────────────────────────────
+  if (state.isLoading || !state.task) {
+    return (
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──────────────────────────────────────────────────────────────
+  if (state.isError) {
+    return (
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
+          <p className="text-sm text-red-600">Failed to load task. It may have been deleted.</p>
+          <button
+            onClick={state.handleBack}
+            className="text-sm font-medium text-primary underline"
+          >
+            Back to Tasks
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-4">
@@ -37,6 +66,16 @@ export function TaskDetailsWorkspace() {
             onDueDateChange={state.updateDueDate}
           />
           <ReviewersSection reviewers={state.reviewers} />
+
+          {/* Comments */}
+          <CommentSection
+            activityLogs={state.activityLogs}
+            commentDraft={state.commentDraft}
+            onDraftChange={state.setCommentDraft}
+            onSubmit={state.submitComment}
+            onDelete={state.removeComment}
+            isSubmitting={state.isSubmittingComment}
+          />
         </div>
 
         <aside className="space-y-5">

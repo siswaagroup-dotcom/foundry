@@ -2,55 +2,62 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import { tasks as initialTasks } from "@/data/task-data";
- 
+import { useTaskList, useUpdateTask } from "@/hooks/useTasks";
+import { useToast } from "@/components/ui/toast";
+import type { TaskStatus } from "@/services/task.service";
+import type { TaskFilters } from "@/services/task.service";
 import { KanbanBoard } from "./KanbanBoard";
 import { TasksFilters } from "./TasksFilters";
 import { TasksHeader } from "./TasksHeader";
-import { TaskStatus } from "../../../../types/task-types";
 
 export function TaskWorkspace() {
   const router = useRouter();
-  const [tasks, setTasks] = useState(initialTasks);
+  const { toast } = useToast();
+  const [filters, setFilters] = useState<TaskFilters>({});
 
-  const handleTaskMove = useCallback((
-    taskId: string,
-    newStatus: TaskStatus
-  ) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: newStatus,
-            }
-        : task
-      )
-    );
-  }, []);
+  const { data: tasks = [], isLoading } = useTaskList(filters);
+  const updateTask = useUpdateTask();
+
+  const handleTaskMove = useCallback(
+    (taskId: string, newStatus: TaskStatus) => {
+      updateTask.mutate(
+        { id: taskId, input: { status: newStatus } },
+        {
+          onError: () =>
+            toast({ title: "Failed to move task", variant: "error" }),
+        }
+      );
+    },
+    [updateTask, toast]
+  );
 
   const openCreateTask = useCallback(
     () => router.push("/dashboard/tasks/create"),
-    [router],
+    [router]
   );
 
   const openTask = useCallback(
     (taskId: string) => router.push(`/dashboard/tasks/${taskId}`),
-    [router],
+    [router]
   );
 
   return (
     <div className="space-y-6">
       <TasksHeader onCreateTask={openCreateTask} />
 
-      <TasksFilters />
+      <TasksFilters filters={filters} onFiltersChange={setFilters} />
 
-      <KanbanBoard
-        tasks={tasks}
-        onTaskMove={handleTaskMove}
-        onTaskOpen={openTask}
-      />
+      {isLoading ? (
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        </div>
+      ) : (
+        <KanbanBoard
+          tasks={tasks}
+          onTaskMove={handleTaskMove}
+          onTaskOpen={openTask}
+        />
+      )}
     </div>
   );
 }

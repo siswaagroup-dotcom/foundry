@@ -1,12 +1,14 @@
 "use client";
 
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { useRouter } from "next/navigation";
 import { ApprovalRules } from "./ApprovalRules";
 import { SettingsTabs } from "./SettingsTabs";
 import { WorkspaceSettings } from "./WorkspaceSettings";
 import { useSettings } from "./hooks/useSettings";
 
 export function SettingsWorkspace() {
+  const router = useRouter();
   const {
     activeTab,
     setActiveTab,
@@ -15,6 +17,16 @@ export function SettingsWorkspace() {
     updateField,
     saveSettings,
   } = useSettings();
+  const title = activeTab === "workspace" ? "Workspace" : "Approval Rules";
+
+  function changeTab(tab: typeof activeTab) {
+    if (tab === "billing") {
+      router.push("/dashboard/billing");
+      return;
+    }
+
+    setActiveTab(tab);
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-4">
@@ -25,11 +37,9 @@ export function SettingsWorkspace() {
         </p>
       </div>
 
-      <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <SettingsTabs activeTab={activeTab} onTabChange={changeTab} />
 
-      <DashboardCard
-        title={activeTab === "workspace" ? "Workspace" : "Approval Rules"}
-      >
+      <DashboardCard title={title}>
         {activeTab === "workspace" ? (
           <WorkspaceSettings
             fields={workspaceFields}

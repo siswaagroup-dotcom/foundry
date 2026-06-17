@@ -1,9 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Lock, Mail, User } from "lucide-react";
+import { ArrowRight, Building2, Lock, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { useSignUp } from "@/hooks/useAuth";
 
 import { signUpSchema } from "@/lib/validations/auth";
 import type { SignUpValues } from "@/types/auth";
@@ -18,7 +18,7 @@ import type { SignUpValues } from "@/types/auth";
 export function SignUpForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const signUpMutation = useSignUp();
   const {
     control,
     formState: { errors },
@@ -29,19 +29,38 @@ export function SignUpForm() {
     defaultValues: {
       name: "",
       email: "",
+      workspaceName: "",
       password: "",
       terms: false,
     },
   });
 
-  function onSubmit(values: SignUpValues) {
-    toast({
-      title: "Account created",
-      description: `Your Foundry workspace is ready, ${values.name}.`,
-      variant: "success",
-    });
-    startTransition(() => router.replace("/dashboard"));
+  async function onSubmit(values: SignUpValues) {
+    try {
+      const session = await signUpMutation.mutateAsync({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        workspaceName: values.workspaceName,
+      });
+
+      toast({
+        title: "Account created",
+        description: `${session.workspaceName} is ready.`,
+        variant: "success",
+      });
+      router.replace("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Account creation failed",
+        description:
+          error instanceof Error ? error.message : "Check your details and try again.",
+        variant: "error",
+      });
+    }
   }
+
+  const isPending = signUpMutation.isPending;
 
   return (
     <form
@@ -93,6 +112,30 @@ export function SignUpForm() {
 
         <p className="min-h-3 text-[11px] leading-3 text-primary">
           {errors.email?.message}
+        </p>
+      </div>
+
+      {/* Workspace Name */}
+      <div className="space-y-1.5">
+        <Label htmlFor="signup-workspace">
+          Workspace Name
+        </Label>
+
+        <div className="relative">
+          <Input
+            id="signup-workspace"
+            type="text"
+            placeholder="Acme Studio"
+            autoComplete="organization"
+            {...register("workspaceName")}
+            className="h-10 pr-10 text-sm sm:h-11 lg:h-12"
+          />
+
+          <Building2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9b9b9b]" />
+        </div>
+
+        <p className="min-h-3 text-[11px] leading-3 text-primary">
+          {errors.workspaceName?.message}
         </p>
       </div>
 

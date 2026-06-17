@@ -8,6 +8,7 @@ type SettingsTabsProps = {
 
 const tabs: { id: SettingsTab; label: string }[] = [
   { id: "workspace", label: "Workspace" },
+  { id: "billing", label: "Billing" },
   { id: "approval-rules", label: "Approval Rules" },
 ];
 

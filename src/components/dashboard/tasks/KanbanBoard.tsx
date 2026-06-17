@@ -3,25 +3,26 @@
 import { memo, useCallback, useMemo } from "react";
 import {
   DndContext,
-  DragEndEvent,
+  type DragEndEvent,
   PointerSensor,
   closestCorners,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-
-import { Task, TaskStatus } from "../../../../types/task-types";
- 
+import type { Task, TaskStatus } from "@/services/task.service";
 import { KanbanColumn } from "./KanbanColumn";
 
-const validStatuses: TaskStatus[] = ["todo", "planning", "doing", "review"];
+const COLUMNS: { id: TaskStatus; title: string }[] = [
+  { id: "todo",     title: "To Do"    },
+  { id: "planning", title: "Planning" },
+  { id: "doing",    title: "Doing"    },
+  { id: "review",   title: "Review"   },
+  { id: "done",     title: "Done"     },
+];
 
 interface KanbanBoardProps {
   tasks: Task[];
-  onTaskMove: (
-    taskId: string,
-    newStatus: TaskStatus
-  ) => void;
+  onTaskMove: (taskId: string, newStatus: TaskStatus) => void;
   onTaskOpen: (taskId: string) => void;
 }
 
@@ -35,43 +36,43 @@ export const KanbanBoard = memo(function KanbanBoard({
   });
   const sensors = useSensors(pointerSensor);
 
-  const columns = useMemo(
-    () => ({
-      todo: tasks.filter((task) => task.status === "todo"),
-      planning: tasks.filter((task) => task.status === "planning"),
-      doing: tasks.filter((task) => task.status === "doing"),
-      review: tasks.filter((task) => task.status === "review"),
-    }),
-    [tasks],
-  );
+  const columns = useMemo(() => {
+    const map: Record<TaskStatus, Task[]> = {
+      todo: [], planning: [], doing: [], review: [], done: [],
+    };
+    tasks.forEach((t) => {
+      if (map[t.status]) map[t.status].push(t);
+    });
+    return map;
+  }, [tasks]);
 
   const taskById = useMemo(
-    () => new Map(tasks.map((task) => [task.id, task])),
-    [tasks],
+    () => new Map(tasks.map((t) => [t.id, t])),
+    [tasks]
   );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
-
       if (!over) return;
 
       const activeTask = taskById.get(String(active.id));
-
       if (!activeTask) return;
 
       const overTask = taskById.get(String(over.id));
-
       if (overTask) {
-        onTaskMove(activeTask.id, overTask.status);
+        if (overTask.status !== activeTask.status) {
+          onTaskMove(activeTask.id, overTask.status);
+        }
         return;
       }
 
-      if (validStatuses.includes(over.id as TaskStatus)) {
-        onTaskMove(activeTask.id, over.id as TaskStatus);
+      const overId = over.id as TaskStatus;
+      if (COLUMNS.some((c) => c.id === overId) && overId !== activeTask.status) {
+        onTaskMove(activeTask.id, overId);
       }
     },
-    [onTaskMove, taskById],
+    [onTaskMove, taskById]
   );
 
   return (
@@ -82,33 +83,15 @@ export const KanbanBoard = memo(function KanbanBoard({
     >
       <div className="overflow-x-auto">
         <div className="flex min-w-max gap-5">
-          <KanbanColumn
-            id="todo"
-            title="To Do"
-            tasks={columns.todo}
-            onTaskOpen={onTaskOpen}
-          />
-
-          <KanbanColumn
-            id="planning"
-            title="Planning"
-            tasks={columns.planning}
-            onTaskOpen={onTaskOpen}
-          />
-
-          <KanbanColumn
-            id="doing"
-            title="Doing"
-            tasks={columns.doing}
-            onTaskOpen={onTaskOpen}
-          />
-
-          <KanbanColumn
-            id="review"
-            title="Review"
-            tasks={columns.review}
-            onTaskOpen={onTaskOpen}
-          />
+          {COLUMNS.map((col) => (
+            <KanbanColumn
+              key={col.id}
+              id={col.id}
+              title={col.title}
+              tasks={columns[col.id]}
+              onTaskOpen={onTaskOpen}
+            />
+          ))}
         </div>
       </div>
     </DndContext>

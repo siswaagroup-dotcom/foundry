@@ -104,13 +104,13 @@ export function CreateTaskWorkspace() {
       </main>
 
       <footer className="flex justify-end gap-3 border-t border-[#e5e7eb] bg-white px-7 py-4">
-        <Button variant="outline" onClick={task.cancel} className="h-14 px-6">
+        <Button variant="outline" onClick={task.cancel} disabled={task.isLoading} className="h-14 px-6">
           <X className="h-4 w-4" />
           Cancel
         </Button>
-        <Button onClick={task.saveTask} className="h-14 px-7">
+        <Button onClick={task.saveTask} disabled={task.isLoading} className="h-14 px-7">
           <Check className="h-4 w-4" />
-          Save Task
+          {task.isLoading ? "Saving…" : "Save Task"}
         </Button>
       </footer>
     </div>

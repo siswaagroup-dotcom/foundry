@@ -13,4 +13,4 @@ export interface ApprovalRule {
   description?: string;
 }
 
-export type SettingsTab = "workspace" | "approval-rules";
+export type SettingsTab = "workspace" | "approval-rules" | "billing";

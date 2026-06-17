@@ -47,7 +47,6 @@ export function RoleConfigurationWorkspace({ onBack }: { onBack?: () => void }) 
   }
 
   function back() {
-    console.log("Back");
     if (onBack) onBack();
     else router.push("/dashboard/team");
   }
@@ -61,7 +60,7 @@ export function RoleConfigurationWorkspace({ onBack }: { onBack?: () => void }) 
           </button>
           <h1 className="text-2xl font-bold">Role Configuration</h1>
         </div>
-        <button onClick={() => console.log("Duplicate")} className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-4 text-xs">
+        <button onClick={() => {/* Duplicate Role — wired in next phase */}} className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-4 text-xs">
           <Copy className="h-4 w-4" /> Duplicate Role
         </button>
       </header>

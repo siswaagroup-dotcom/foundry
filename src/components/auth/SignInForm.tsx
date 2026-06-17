@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { useSignIn } from "@/hooks/useAuth";
 
 import { signInSchema } from "@/lib/validations/auth";
 import type { SignInValues } from "@/types/auth";
@@ -22,7 +22,7 @@ type SignInFormProps = {
 export function SignInForm({ onForgotPassword }: SignInFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const signInMutation = useSignIn();
   const {
     control,
     formState: { errors },
@@ -37,14 +37,26 @@ export function SignInForm({ onForgotPassword }: SignInFormProps) {
     },
   });
 
-  function onSubmit(values: SignInValues) {
-    toast({
-      title: "Signed in successfully",
-      description: `Welcome back to Foundry, ${values.email}.`,
-      variant: "success",
-    });
-    startTransition(() => router.replace("/dashboard"));
+  async function onSubmit(values: SignInValues) {
+    try {
+      const session = await signInMutation.mutateAsync(values);
+      toast({
+        title: "Signed in successfully",
+        description: `Welcome back to Foundry, ${session.user.name}.`,
+        variant: "success",
+      });
+      router.replace("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Sign in failed",
+        description:
+          error instanceof Error ? error.message : "Check your credentials and try again.",
+        variant: "error",
+      });
+    }
   }
+
+  const isPending = signInMutation.isPending;
 
   return (
     <form

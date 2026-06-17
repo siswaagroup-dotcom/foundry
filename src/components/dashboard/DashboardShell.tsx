@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 
+import { useAuth, useLogout } from "@/hooks/useAuth";
 import { navItems } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +24,14 @@ type DashboardShellProps = {
 
 const SidebarContent = memo(function SidebarContent({
   onNavigate,
+  onLogout,
+  workspaceName,
+  logoutPending,
 }: {
   onNavigate?: () => void;
+  onLogout: () => void;
+  workspaceName: string;
+  logoutPending: boolean;
 }) {
   const pathname = usePathname();
   const items = useMemo(
@@ -52,7 +59,7 @@ const SidebarContent = memo(function SidebarContent({
           </p>
 
           <p className="text-xs text-[#6b7280]">
-            Acme Projects
+            {workspaceName}
           </p>
         </div>
       </div>
@@ -82,16 +89,15 @@ const SidebarContent = memo(function SidebarContent({
       </nav>
 
       <div className="border-t border-[#e5e7eb] px-3 py-3">
-        <Link
-          href="/auth"
-          replace
-          prefetch
-          onClick={onNavigate}
+        <button
+          type="button"
+          onClick={onLogout}
+          disabled={logoutPending}
           className="flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium text-[#4b5563] transition-colors hover:bg-[#f8fafc] hover:text-[#111827]"
         >
           <LogOut className="h-4 w-4" />
-          Logout
-        </Link>
+          {logoutPending ? "Logging out..." : "Logout"}
+        </button>
       </div>
     </div>
   );
@@ -104,15 +110,33 @@ export function DashboardShell({
   const [mobileOpen, setMobileOpen] =
     useState(false);
   const router = useRouter();
+  const auth = useAuth();
+  const logoutMutation = useLogout();
   const openMobileNav = useCallback(() => setMobileOpen(true), []);
   const closeMobileNav = useCallback(() => setMobileOpen(false), []);
+  const handleLogout = useCallback(async () => {
+    await logoutMutation.mutateAsync();
+    closeMobileNav();
+    router.replace("/auth");
+  }, [closeMobileNav, logoutMutation, router]);
   const openQuickCreate = useCallback(
     () => router.push("/dashboard/tasks/create"),
+    [router],
+  );
+  const openNotifications = useCallback(
+    () => router.push("/dashboard/notifications"),
+    [router],
+  );
+  const openProfile = useCallback(
+    () => router.push("/dashboard/profile"),
     [router],
   );
   useEffect(() => {
     const routes = [
       ...navItems.map((item) => item.href),
+      "/dashboard/profile",
+      "/dashboard/notifications",
+      "/dashboard/billing",
       "/dashboard/tasks/create",
       "/dashboard/expenses/create",
       "/dashboard/clients/create",
@@ -155,7 +179,11 @@ export function DashboardShell({
     <div className="h-dvh overflow-hidden bg-[#f8fafc] text-[#111827]">
       {/* Desktop Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
-        <SidebarContent />
+        <SidebarContent
+          onLogout={handleLogout}
+          workspaceName={auth.workspaceName ?? "Foundry"}
+          logoutPending={logoutMutation.isPending}
+        />
       </aside>
 
       {/* Mobile Sidebar */}
@@ -167,7 +195,12 @@ export function DashboardShell({
           />
 
           <aside className="fixed inset-y-0 left-0 z-50 w-72 lg:hidden">
-            <SidebarContent onNavigate={closeMobileNav} />
+            <SidebarContent
+              onNavigate={closeMobileNav}
+              onLogout={handleLogout}
+              workspaceName={auth.workspaceName ?? "Foundry"}
+              logoutPending={logoutMutation.isPending}
+            />
           </aside>
         </>
       )}
@@ -190,7 +223,7 @@ export function DashboardShell({
             </h1>
 
             <button className="hidden h-9 items-center gap-2 rounded-lg bg-[#f3f4f6] px-3 text-xs font-medium text-[#4b5563] md:inline-flex">
-              Acme Projects
+              {auth.workspaceName ?? "Workspace"}
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
 
@@ -211,15 +244,23 @@ export function DashboardShell({
               Quick Create
             </button>
 
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#4b5563]">
+            <button
+              type="button"
+              onClick={openNotifications}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#4b5563]"
+            >
               <Bell className="h-4 w-4" />
             </button>
 
-            <button className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-2 text-sm text-[#4b5563]">
+            <button
+              type="button"
+              onClick={openProfile}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-2 text-sm text-[#4b5563]"
+            >
               <UserCircle className="h-5 w-5" />
 
               <span className="hidden sm:inline">
-                Atul
+                {auth.user?.name ?? "Account"}
               </span>
             </button>
           </header>

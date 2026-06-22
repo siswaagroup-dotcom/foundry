@@ -14,9 +14,10 @@ const createSchema = z.object({
   currency:       z.string().length(3).optional(),
   amountPlanned:  z.number().nonnegative(),
   amountIncurred: z.number().nonnegative().optional(),
-  status:         z.enum(["planned","pending","approved","incurred","rejected"]).optional(),
+  status:         z.enum(["planned","pending","approved","incurred","rejected","paid"]).optional(),
   expenseDate:    z.string().min(1),
   clientId:       z.string().uuid().optional(),
+  notes:          z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {

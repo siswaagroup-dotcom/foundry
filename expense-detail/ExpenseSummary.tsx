@@ -15,13 +15,14 @@ function formatAmount(amount: number) {
 export function ExpenseSummary({ expense }: ExpenseSummaryProps) {
   const fields = [
     ["Amount", `$${formatAmount(expense.amount)}`],
+    ["Incurred", expense.amountIncurred === null ? "Not recorded" : `$${formatAmount(expense.amountIncurred)}`],
     ["Currency", expense.currency],
     ["Vendor", expense.vendor],
     ["Date", expense.date],
     ["Category", expense.category],
     ["Payment Method", expense.paymentMethod],
     ["Related Client", expense.relatedClient],
-    ["Status", "Incurred & Approved"],
+    ["Status", expense.status],
   ];
 
   return (
@@ -48,6 +49,14 @@ export function ExpenseSummary({ expense }: ExpenseSummaryProps) {
           </div>
         ))}
       </div>
+      {expense.notes && (
+        <div className="border-t border-[#edf0f3] px-5 py-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6b7280]">
+            Notes / Rejection Reason
+          </p>
+          <p className="mt-2 text-sm font-semibold text-[#374151]">{expense.notes}</p>
+        </div>
+      )}
     </section>
   );
 }

@@ -4,74 +4,97 @@ import { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { useExpense } from "@/hooks/useExpense";
-import { useApproveExpense, useDeleteExpense } from "@/hooks/useExpenses";
+import { useAddExpenseAttachment, useApproveExpense, useDeleteExpense } from "@/hooks/useExpenses";
 import type { ApprovalStage } from "@/types/expense";
 import type {
-  BreadcrumbItem, WorkflowStep, ActivityLogItem, RelatedLink,
+  ActivityLogItem, BreadcrumbItem, RelatedLink, WorkflowStep,
 } from "../types/expense-detail-types";
 
 export function useExpenseDetail() {
-  const router   = useRouter();
+  const router = useRouter();
   const { toast } = useToast();
-  const params   = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
   const expenseId = params?.id ?? "";
 
   const { data: expense, isLoading, isError } = useExpense(expenseId);
   const approveMutation = useApproveExpense();
-  const deleteMutation  = useDeleteExpense();
+  const attachmentMutation = useAddExpenseAttachment();
+  const deleteMutation = useDeleteExpense();
 
   const [approvalComment, setApprovalComment] = useState("");
+  const [attachmentFileName, setAttachmentFileName] = useState("");
+  const [attachmentFileUrl, setAttachmentFileUrl] = useState("");
+  const [attachmentMimeType, setAttachmentMimeType] = useState("");
 
-  // Breadcrumbs
   const breadcrumbs: BreadcrumbItem[] = [
     { id: "expenses", label: "Expenses" },
-    { id: "detail",   label: expense?.name ?? "Expense Detail" },
+    { id: "detail", label: expense?.name ?? "Expense Detail" },
   ];
 
-  // Map approvals → WorkflowStep shape (existing UI component)
-  const workflowSteps: WorkflowStep[] = (expense?.approvals ?? []).map((a) => ({
-    id:        a.id,
-    title:     stageLabel(a.stage),
-    approver:  a.approverName,
-    timestamp: new Date(a.actionedAt).toLocaleDateString("en-US", {
-      month: "short", day: "numeric", year: "numeric",
+  const workflowSteps: WorkflowStep[] = (expense?.approvals ?? []).map((approval) => ({
+    id: approval.id,
+    title: stageLabel(approval.stage),
+    approver: approval.approverName,
+    timestamp: new Date(approval.actionedAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     }),
-    status: a.stage === "approved" ? "Complete"
-          : a.stage === "rejected" ? "Rejected"
-          : "Pending",
+    status: approval.stage === "approved" || approval.stage === "paid"
+      ? "Complete"
+      : approval.stage === "rejected"
+        ? "Rejected"
+        : "Pending",
   }));
 
-  // Map approvals → ActivityLogItem shape (existing UI component)
-  const activityLog: ActivityLogItem[] = (expense?.approvals ?? []).map((a) => ({
-    id:        a.id,
-    action:    `${a.approverName} — ${stageLabel(a.stage)}${a.comment ? `: "${a.comment}"` : ""}`,
-    timestamp: new Date(a.actionedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    type:      a.stage === "approved" ? "approved"
-             : a.stage === "rejected" ? "rejected"
-             : "note",
+  const approvalActivity: ActivityLogItem[] = (expense?.approvals ?? []).map((approval) => ({
+    id: approval.id,
+    action: `${approval.approverName} - ${stageLabel(approval.stage)}${approval.comment ? `: "${approval.comment}"` : ""}`,
+    timestamp: new Date(approval.actionedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    type: approval.stage === "approved" || approval.stage === "paid"
+      ? "approved"
+      : approval.stage === "rejected"
+        ? "rejected"
+        : "note",
   }));
+
+  const attachmentActivity: ActivityLogItem[] = (expense?.attachments ?? []).map((attachment) => ({
+    id: attachment.id,
+    action: `${attachment.uploaderName} attached ${attachment.fileName}`,
+    timestamp: new Date(attachment.uploadedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    type: "attachment",
+  }));
+
+  const activityLog = [...approvalActivity, ...attachmentActivity];
+  const rejectionReason =
+    [...(expense?.approvals ?? [])].reverse().find((approval) => approval.stage === "rejected" && approval.comment)?.comment
+    ?? expense?.notes
+    ?? null;
 
   const relatedLinks: RelatedLink[] = [
     { id: "back", title: "Back to Expenses", href: "/dashboard/expenses" },
   ];
 
-  // Map expense to the shape ExpenseDetail / ExpenseSummary components expect
   const expenseDetail = expense ? {
-    id:            expense.id,
-    title:         expense.name,
-    amount:        expense.amountPlanned,
-    currency:      expense.currency,
-    vendor:        expense.vendor ?? "—",
-    date:          new Date(expense.expenseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-    category:      expense.category,
-    paymentMethod: "—",
-    relatedClient: "—",
-    status:        capitalise(expense.status),
+    id: expense.id,
+    title: expense.name,
+    amount: expense.amountPlanned,
+    amountIncurred: expense.amountIncurred,
+    currency: expense.currency,
+    vendor: expense.vendor ?? "-",
+    date: new Date(expense.expenseDate).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
+    category: expense.category,
+    paymentMethod: "-",
+    relatedClient: expense.clientId ?? "-",
+    status: capitalise(expense.status),
+    notes: expense.notes,
   } : null;
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
-
-  const submitApproval = useCallback(async (stage: ApprovalStage) => {
+  const submitApproval = useCallback((stage: ApprovalStage) => {
     if (!expenseId) return;
     approveMutation.mutate(
       { id: expenseId, input: { stage, comment: approvalComment || undefined } },
@@ -81,9 +104,32 @@ export function useExpenseDetail() {
           setApprovalComment("");
         },
         onError: (err) => toast({ title: "Action failed", description: err.message, variant: "error" }),
-      }
+      },
     );
-  }, [expenseId, approvalComment, approveMutation, toast]);
+  }, [approvalComment, approveMutation, expenseId, toast]);
+
+  const addAttachment = useCallback(() => {
+    if (!expenseId) return;
+    attachmentMutation.mutate(
+      {
+        id: expenseId,
+        input: {
+          fileName: attachmentFileName,
+          fileUrl: attachmentFileUrl,
+          mimeType: attachmentMimeType.trim() || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Attachment added", variant: "success" });
+          setAttachmentFileName("");
+          setAttachmentFileUrl("");
+          setAttachmentMimeType("");
+        },
+        onError: (err) => toast({ title: "Failed to add attachment", description: err.message, variant: "error" }),
+      },
+    );
+  }, [attachmentFileName, attachmentFileUrl, attachmentMimeType, attachmentMutation, expenseId, toast]);
 
   const editExpense = useCallback(() => {
     router.push(`/dashboard/expenses/${expenseId}/edit`);
@@ -92,15 +138,18 @@ export function useExpenseDetail() {
   const handleDelete = useCallback(() => {
     if (!expenseId) return;
     deleteMutation.mutate(expenseId, {
-      onSuccess: () => { toast({ title: "Expense deleted", variant: "success" }); router.push("/dashboard/expenses"); },
-      onError:   (err) => toast({ title: "Failed to delete", description: err.message, variant: "error" }),
+      onSuccess: () => {
+        toast({ title: "Expense deleted", variant: "success" });
+        router.push("/dashboard/expenses");
+      },
+      onError: (err) => toast({ title: "Failed to delete", description: err.message, variant: "error" }),
     });
-  }, [expenseId, deleteMutation, toast, router]);
+  }, [deleteMutation, expenseId, router, toast]);
 
   const moreActions = handleDelete;
 
   const openRelatedLink = useCallback((linkId: string) => {
-    const link = relatedLinks.find((l) => l.id === linkId);
+    const link = relatedLinks.find((item) => item.id === linkId);
     if (link) router.push(link.href);
   }, [relatedLinks, router]);
 
@@ -111,42 +160,53 @@ export function useExpenseDetail() {
     rawExpense: expense,
     workflowSteps,
     activityLog,
+    rejectionReason,
     relatedLinks,
     approvalComment,
     setApprovalComment,
+    attachmentFileName,
+    setAttachmentFileName,
+    attachmentFileUrl,
+    setAttachmentFileUrl,
+    attachmentMimeType,
+    setAttachmentMimeType,
     isLoading,
     isError,
     isApproving: approveMutation.isPending,
-    isDeleting:  deleteMutation.isPending,
+    isAddingAttachment: attachmentMutation.isPending,
+    isDeleting: deleteMutation.isPending,
     submitApproval,
+    addAttachment,
     editExpense,
     moreActions,
     openRelatedLink,
   };
 }
 
-function capitalise(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function capitalise(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function stageLabel(stage: string): string {
   const map: Record<string, string> = {
-    submitted:          "Submitted",
-    under_review:       "Under Review",
-    approved:           "Approved",
-    rejected:           "Rejected",
-    changes_requested:  "Changes Requested",
+    submitted: "Submitted",
+    under_review: "Under Review",
+    approved: "Approved",
+    rejected: "Rejected",
+    changes_requested: "Changes Requested",
+    paid: "Paid",
   };
   return map[stage] ?? stage;
 }
 
 function stageToast(stage: ApprovalStage): string {
   const map: Record<ApprovalStage, string> = {
-    submitted:          "Submitted for approval",
-    under_review:       "Marked as under review",
-    approved:           "Expense approved",
-    rejected:           "Expense rejected",
-    changes_requested:  "Changes requested",
+    submitted: "Submitted for approval",
+    under_review: "Marked as under review",
+    approved: "Expense approved",
+    rejected: "Expense rejected",
+    changes_requested: "Changes requested",
+    paid: "Expense marked as paid",
   };
   return map[stage];
 }

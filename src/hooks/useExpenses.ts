@@ -2,15 +2,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  approveExpense, createExpense, deleteExpenseById,
+  addExpenseAttachment, approveExpense, createExpense, deleteExpenseById,
   fetchExpenses, fetchPendingApprovals, updateExpense,
-  type ApproveExpenseInput, type CreateExpenseInput,
+  type ApproveExpenseInput, type CreateExpenseAttachmentInput, type CreateExpenseInput,
   type Expense, type ExpenseFilters, type UpdateExpenseInput,
 } from "@/services/expense.service";
 
 export const EXPENSES_KEY = ["expenses"] as const;
 const expenseKeys = (f: ExpenseFilters = {}) => [...EXPENSES_KEY, f] as const;
 const pendingKey  = ["expenses", "pending-approvals"] as const;
+const analyticsKey = ["expenses", "analytics"] as const;
+const detailKey = (id: string) => ["expenses", "detail", id] as const;
 
 // ─── useExpenseList ───────────────────────────────────────────────────────────
 export function useExpenseList(filters: ExpenseFilters = {}) {
@@ -89,6 +91,20 @@ export function useApproveExpense() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: EXPENSES_KEY });
       qc.invalidateQueries({ queryKey: pendingKey });
+      qc.invalidateQueries({ queryKey: analyticsKey });
+    },
+  });
+}
+
+// ─── useAddExpenseAttachment ─────────────────────────────────────────────────
+export function useAddExpenseAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: CreateExpenseAttachmentInput }) =>
+      addExpenseAttachment(id, input),
+    onSuccess: (_expense, vars) => {
+      qc.invalidateQueries({ queryKey: EXPENSES_KEY });
+      qc.invalidateQueries({ queryKey: detailKey(vars.id) });
     },
   });
 }

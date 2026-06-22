@@ -109,9 +109,13 @@ export function CreateExpenseWorkspace() {
           </section>
 
           <div className="flex flex-wrap justify-end gap-3 border-t border-[#e5e7eb] p-6">
-            <Button variant="outline" onClick={expense.cancel}>Cancel</Button>
-            <Button variant="outline" onClick={expense.saveDraft}>Save Draft</Button>
-            <Button onClick={expense.createExpense}>Create Expense</Button>
+            <Button variant="outline" onClick={expense.cancel} disabled={expense.isLoading}>Cancel</Button>
+            <Button variant="outline" onClick={expense.saveDraft} disabled={expense.isLoading}>
+              {expense.isLoading ? "Saving…" : "Save Draft"}
+            </Button>
+            <Button onClick={expense.createExpense} disabled={expense.isLoading}>
+              {expense.isLoading ? "Creating…" : "Create Expense"}
+            </Button>
           </div>
         </div>
       </main>

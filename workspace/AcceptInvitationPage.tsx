@@ -75,7 +75,7 @@ export function AcceptInvitationPage() {
       // Persist tokens, update global auth context
       setTokens(data.accessToken, data.refreshToken);
       setSession({
-        user:          data.user,
+        user:          { ...data.user, emailVerified: false },
         workspace:     { id: data.workspaceId, name: data.workspaceName, slug: data.workspaceSlug, role: "Member" },
         workspaceId:   data.workspaceId,
         workspaceSlug: data.workspaceSlug,

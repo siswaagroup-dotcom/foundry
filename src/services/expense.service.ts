@@ -4,11 +4,22 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api-client";
 import type {
   Expense, ExpenseFilters, CreateExpenseInput,
-  UpdateExpenseInput, ApproveExpenseInput,
+  UpdateExpenseInput, ApproveExpenseInput, CreateExpenseAttachmentInput,
 } from "@/types/expense";
 
-export type { Expense, ExpenseFilters, CreateExpenseInput, UpdateExpenseInput, ApproveExpenseInput };
+export type { Expense, ExpenseFilters, CreateExpenseInput, UpdateExpenseInput, ApproveExpenseInput, CreateExpenseAttachmentInput };
 export type { ExpenseStatus, ApprovalStage } from "@/types/expense";
+
+export interface ExpenseAnalytics {
+  totalPlanned:    number;
+  totalIncurred:   number;
+  totalApproved:   number;
+  totalRejected:   number;
+  totalPending:    number;
+  byCategory:      { category: string; total: number }[];
+  byStatus:        { status: string; count: number; total: number }[];
+  recentApprovals: { expenseName: string; approverName: string; stage: string; actionedAt: string }[];
+}
 
 const BASE = "/api/expenses";
 
@@ -32,5 +43,6 @@ export const createExpense        = (input: CreateExpenseInput): Promise<Expense
 export const updateExpense        = (id: string, input: UpdateExpenseInput): Promise<Expense> => apiPatch(`${BASE}/${id}`, input);
 export const deleteExpenseById    = (id: string): Promise<{ id: string }>       => apiDelete(`${BASE}/${id}`);
 export const approveExpense       = (id: string, input: ApproveExpenseInput): Promise<Expense> => apiPost(`${BASE}/${id}/approve`, input);
+export const addExpenseAttachment = (id: string, input: CreateExpenseAttachmentInput): Promise<Expense> => apiPost(`${BASE}/${id}/attachments`, input);
 export const fetchPendingApprovals = (): Promise<Expense[]>                     => apiGet(`${BASE}/pending-approvals`);
-export const fetchExpenseAnalytics = (): Promise<unknown>                       => apiGet(`${BASE}/analytics`);
+export const fetchExpenseAnalytics = (): Promise<ExpenseAnalytics>              => apiGet(`${BASE}/analytics`);

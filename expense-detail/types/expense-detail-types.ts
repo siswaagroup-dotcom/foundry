@@ -2,6 +2,7 @@ export interface ExpenseDetail {
   id: string;
   title: string;
   amount: number;
+  amountIncurred: number | null;
   currency: string;
   vendor: string;
   date: string;
@@ -9,6 +10,7 @@ export interface ExpenseDetail {
   paymentMethod: string;
   relatedClient: string;
   status: string;
+  notes: string | null;
 }
 
 export interface WorkflowStep {

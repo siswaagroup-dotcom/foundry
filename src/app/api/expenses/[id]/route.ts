@@ -13,9 +13,10 @@ const updateSchema = z.object({
   currency:       z.string().length(3).optional(),
   amountPlanned:  z.number().nonnegative().optional(),
   amountIncurred: z.number().nonnegative().nullable().optional(),
-  status:         z.enum(["planned","pending","approved","incurred","rejected"]).optional(),
+  status:         z.enum(["planned","pending","approved","incurred","rejected","paid"]).optional(),
   expenseDate:    z.string().optional(),
   clientId:       z.string().uuid().nullable().optional(),
+  notes:          z.string().nullable().optional(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

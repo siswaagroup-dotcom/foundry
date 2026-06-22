@@ -8,14 +8,16 @@ export type ExpenseStatus =
   | "pending"
   | "approved"
   | "incurred"
-  | "rejected";
+  | "rejected"
+  | "paid";
 
 export type ApprovalStage =
   | "submitted"
   | "under_review"
   | "approved"
   | "rejected"
-  | "changes_requested";
+  | "changes_requested"
+  | "paid";
 
 export interface ExpenseApproval {
   id:           string;
@@ -33,6 +35,7 @@ export interface Expense {
   workspaceId:    string;
   name:           string;
   detail:         string | null;
+  notes:          string | null;
   category:       string;
   vendor:         string | null;
   currency:       string;
@@ -45,9 +48,29 @@ export interface Expense {
   ownerInitials:  string;
   clientId:       string | null;
   approvals:      ExpenseApproval[];
+  attachments:    ExpenseAttachment[];
   createdBy:      string;
   createdAt:      string;
   updatedAt:      string;
+}
+
+export interface ExpenseAttachment {
+  id:             string;
+  expenseId:      string;
+  fileName:       string;
+  fileUrl:        string;
+  fileSizeBytes:  number | null;
+  mimeType:       string | null;
+  uploaderId:     string;
+  uploaderName:   string;
+  uploadedAt:     string;
+}
+
+export interface CreateExpenseAttachmentInput {
+  fileName:       string;
+  fileUrl:        string;
+  fileSizeBytes?: number | null;
+  mimeType?:      string | null;
 }
 
 export interface ExpenseFilters {
@@ -64,6 +87,7 @@ export interface ExpenseFilters {
 export interface CreateExpenseInput {
   name:           string;
   detail?:        string;
+  notes?:         string;
   category:       string;
   vendor?:        string;
   currency?:      string;
@@ -77,6 +101,7 @@ export interface CreateExpenseInput {
 export interface UpdateExpenseInput {
   name?:          string;
   detail?:        string | null;
+  notes?:         string | null;
   category?:      string;
   vendor?:        string | null;
   currency?:      string;

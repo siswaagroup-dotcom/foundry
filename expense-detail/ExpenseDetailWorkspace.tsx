@@ -1,8 +1,11 @@
 "use client";
 
 import { ActivityLog } from "./ActivityLog";
+import { ApprovalHistoryPanel } from "./ApprovalHistoryPanel";
+import { ApprovalProgress } from "./ApprovalProgress";
 import { ApprovalWorkflow } from "./ApprovalWorkflow";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { ExpenseAttachments } from "./ExpenseAttachments";
 import { ExpenseHeader } from "./ExpenseHeader";
 import { ExpenseSummary } from "./ExpenseSummary";
 import { RelatedLinks } from "./RelatedLinks";
@@ -47,6 +50,7 @@ export function ExpenseDetailWorkspace() {
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
           <ExpenseSummary expense={state.expense} />
+          {state.rawExpense && <ApprovalProgress status={state.rawExpense.status} />}
           <ApprovalWorkflow workflowSteps={state.workflowSteps} />
           <ApprovalActions
             comment={state.approvalComment}
@@ -57,6 +61,25 @@ export function ExpenseDetailWorkspace() {
         </div>
 
         <aside className="space-y-5">
+          {state.rawExpense && (
+            <ApprovalHistoryPanel
+              approvals={state.rawExpense.approvals}
+              rejectionReason={state.rejectionReason}
+            />
+          )}
+          {state.rawExpense && (
+            <ExpenseAttachments
+              attachments={state.rawExpense.attachments}
+              fileName={state.attachmentFileName}
+              fileUrl={state.attachmentFileUrl}
+              mimeType={state.attachmentMimeType}
+              onFileNameChange={state.setAttachmentFileName}
+              onFileUrlChange={state.setAttachmentFileUrl}
+              onMimeTypeChange={state.setAttachmentMimeType}
+              onAdd={state.addAttachment}
+              isAdding={state.isAddingAttachment}
+            />
+          )}
           <ActivityLog activityLog={state.activityLog} />
           <RelatedLinks relatedLinks={state.relatedLinks} onLinkClick={state.openRelatedLink} />
         </aside>

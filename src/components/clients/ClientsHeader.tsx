@@ -1,17 +1,25 @@
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Kanban, Plus } from "lucide-react";
 
 type ClientsHeaderProps = {
   onCreateClient: () => void;
 };
 
-export function ClientsHeader({
-  onCreateClient,
-}: ClientsHeaderProps) {
+export function ClientsHeader({ onCreateClient }: ClientsHeaderProps) {
   return (
     <header className="flex items-center justify-between gap-4">
-      <h1 className="text-[24px] font-bold leading-none text-[#0f172a]">
-        Clients
-      </h1>
+      <div>
+        <h1 className="text-[24px] font-bold leading-none text-[#0f172a]">Clients</h1>
+        <div className="mt-1.5">
+          <Link
+            href="/dashboard/clients/pipeline"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6b7280] hover:text-primary"
+          >
+            <Kanban className="h-3.5 w-3.5" />
+            CRM Pipeline
+          </Link>
+        </div>
+      </div>
 
       <button
         type="button"

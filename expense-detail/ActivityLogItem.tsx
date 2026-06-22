@@ -1,4 +1,4 @@
-import { Check, FileText, Plus } from "lucide-react";
+import { Check, FileText, Paperclip, Plus, XCircle } from "lucide-react";
 import type { ActivityLogItem as Activity } from "./types/expense-detail-types";
 
 type ActivityLogItemProps = {
@@ -7,8 +7,10 @@ type ActivityLogItemProps = {
 
 const icons = {
   approved: Check,
+  attachment: Paperclip,
   created: Plus,
   note: FileText,
+  rejected: XCircle,
 };
 
 export function ActivityLogItem({ activity }: ActivityLogItemProps) {

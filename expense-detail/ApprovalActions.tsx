@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, MessageSquare, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle, CreditCard, MessageSquare, RefreshCw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApprovalStage } from "@/types/expense";
 
@@ -28,7 +28,7 @@ export function ApprovalActions({
         <textarea
           value={comment}
           onChange={(e) => onCommentChange(e.target.value)}
-          placeholder="Add a comment or reason…"
+          placeholder="Add a comment or reason..."
           rows={2}
           disabled={isLoading}
           className="w-full resize-none rounded-[10px] border border-[#e5e7eb] px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-50"
@@ -73,6 +73,16 @@ export function ApprovalActions({
         >
           <XCircle className="h-4 w-4" />
           Reject
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={() => onSubmit("paid")}
+          disabled={isLoading}
+          className="h-10 gap-2 border-sky-300 text-sky-700 hover:bg-sky-50"
+        >
+          <CreditCard className="h-4 w-4" />
+          Mark Paid
         </Button>
       </div>
     </section>

@@ -80,6 +80,8 @@ export async function getInvitations(
        JOIN roles r ON r.id = wi.role_id
        JOIN users u ON u.id = wi.invited_by
        WHERE wi.workspace_id = $1
+         AND wi.status = 'pending'
+         AND wi.expires_at > NOW()
        ORDER BY wi.created_at DESC`,
       [workspaceId]
     );
@@ -148,6 +150,12 @@ export async function inviteMember(
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+    console.log("[inviteMember] Generated token:", {
+      rawTokenPrefix: rawToken.slice(0, 8),
+      tokenHashPrefix: tokenHash.slice(0, 12),
+      expiresAt: expiresAt.toISOString(),
+    });
+
     const { rows } = await db.query<{ id: string; created_at: string; expires_at: string }>(
       `INSERT INTO workspace_invitations
          (workspace_id, invited_by, email, role_id, token_hash, status, expires_at)
@@ -166,7 +174,7 @@ export async function inviteMember(
 
     const inviterName   = inviterRows[0]?.name ?? "A team member";
     const workspaceName = inviterRows[0]?.workspace_name ?? "a workspace";
-    const appUrl        = process.env.NEXT_PUBLIC_APP_URL ?? "https://tech.siswaa.com";
+    const appUrl        = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
     // Send invitation email — fire and forget (never blocks invitation creation)
     void sendInvitationEmail({
@@ -225,7 +233,7 @@ export async function resendInvitation(
       [tokenHash, expiresAt, invitationId]
     );
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tech.siswaa.com";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     return {
       success: true,
       data: {

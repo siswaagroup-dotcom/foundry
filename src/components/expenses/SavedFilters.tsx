@@ -2,15 +2,27 @@
 
 import { memo } from "react";
 import { SlidersHorizontal, Star } from "lucide-react";
-import { savedExpenseFilters } from "@/data/expenses";
 import { cn } from "@/lib/utils";
 
 type SavedFiltersProps = {
   activeFilter: string;
   onSelect: (filter: string) => void;
+  savedFilters?: string[];
 };
 
-export const SavedFilters = memo(function SavedFilters({ activeFilter, onSelect }: SavedFiltersProps) {
+const DEFAULT_FILTERS = [
+  "Over Budget Expenses",
+  "Pending Approvals",
+  "Marketing Only",
+  "This Quarter",
+  "High Value ($10k+)",
+];
+
+export const SavedFilters = memo(function SavedFilters({
+  activeFilter,
+  onSelect,
+  savedFilters = DEFAULT_FILTERS,
+}: SavedFiltersProps) {
   return (
     <aside className="rounded-xl border border-slate-100 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)] lg:sticky lg:top-6">
       <div className="flex items-center gap-2 text-sm font-bold text-slate-950">
@@ -18,7 +30,7 @@ export const SavedFilters = memo(function SavedFilters({ activeFilter, onSelect 
         Saved Filters
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-        {savedExpenseFilters.map((filter) => (
+        {savedFilters.map((filter) => (
           <button
             key={filter}
             type="button"

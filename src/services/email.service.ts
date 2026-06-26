@@ -34,12 +34,6 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
     return;
   }
 
-  // Diagnostic: confirm key is loaded (never prints full key)
-  console.log(
-    "[email.sendInvitationEmail] Key loaded:",
-    apiKey ? `${apiKey.slice(0, 7)}... (length: ${apiKey.length})` : "MISSING"
-  );
-
   const resend = new Resend(apiKey);
 
   const fromName  = process.env.INVITE_FROM_NAME  ?? "Siswaa";
@@ -72,8 +66,6 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
 
     if (result.error) {
       console.error("[email.sendInvitationEmail] Resend error:", result.error);
-    } else {
-      console.log("[email.sendInvitationEmail] Sent to", data.to, "| id:", result.data?.id);
     }
   } catch (err) {
     console.error("[email.sendInvitationEmail] Unexpected error:", err);

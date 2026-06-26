@@ -8,13 +8,17 @@ type SettingsTabsProps = {
 
 const tabs: { id: SettingsTab; label: string }[] = [
   { id: "workspace", label: "Workspace" },
+  { id: "profile", label: "Profile" },
+  { id: "team", label: "Team" },
+  { id: "expense-policies", label: "Expense Policies" },
+  { id: "crm", label: "CRM" },
+  { id: "integrations", label: "Integrations" },
   { id: "billing", label: "Billing" },
-  { id: "approval-rules", label: "Approval Rules" },
 ];
 
 export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
   return (
-    <div className="inline-flex rounded-xl border border-[#e5e7eb] bg-white p-1 shadow-sm">
+    <div className="flex flex-wrap gap-1 rounded-xl border border-[#e5e7eb] bg-white p-1 shadow-sm">
       {tabs.map((tab) => (
         <button
           key={tab.id}

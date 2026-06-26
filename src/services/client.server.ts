@@ -270,7 +270,7 @@ export async function getCrmPipeline(workspaceId: string): Promise<ServiceResult
   if (!result.success) return result;
   const pipeline: Record<CrmStage, Client[]> = {
     lead: [], qualified: [], proposal_sent: [], negotiation: [],
-    advance_received: [], active_client: [], completed: [],
+    advance_received: [], active_client: [], completed: [], lost: [],
   };
   result.data.forEach((c) => { if (pipeline[c.crmStatus]) pipeline[c.crmStatus].push(c); });
   return { success: true, data: pipeline };

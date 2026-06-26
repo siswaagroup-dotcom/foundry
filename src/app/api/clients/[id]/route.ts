@@ -15,7 +15,7 @@ const updateSchema = z.object({
   timezone:        z.string().nullable().optional(),
   tier:            z.enum(["enterprise", "premium", "standard"]).optional(),
   priority:        z.enum(["high", "normal"]).optional(),
-  crmStatus:       z.enum(["lead","qualified","proposal_sent","negotiation","advance_received","active_client","completed"]).optional(),
+  crmStatus:       z.enum(["lead","qualified","proposal_sent","negotiation","advance_received","active_client","completed","lost"]).optional(),
   quotedAmount:    z.number().nonnegative().nullable().optional(),
   advanceReceived: z.number().nonnegative().nullable().optional(),
   paidAmount:      z.number().nonnegative().nullable().optional(),

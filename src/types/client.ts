@@ -14,7 +14,8 @@ export type CrmStage =
   | "negotiation"
   | "advance_received"
   | "active_client"
-  | "completed";
+  | "completed"
+  | "lost";
 
 export const CRM_STAGES: { id: CrmStage; label: string }[] = [
   { id: "lead",             label: "Lead"             },
@@ -24,6 +25,7 @@ export const CRM_STAGES: { id: CrmStage; label: string }[] = [
   { id: "advance_received", label: "Advance Received" },
   { id: "active_client",    label: "Active Client"    },
   { id: "completed",        label: "Completed"        },
+  { id: "lost",             label: "Lost"             },
 ];
 
 export interface ClientContact {

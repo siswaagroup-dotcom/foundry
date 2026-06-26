@@ -150,12 +150,6 @@ export async function inviteMember(
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    console.log("[inviteMember] Generated token:", {
-      rawTokenPrefix: rawToken.slice(0, 8),
-      tokenHashPrefix: tokenHash.slice(0, 12),
-      expiresAt: expiresAt.toISOString(),
-    });
-
     const { rows } = await db.query<{ id: string; created_at: string; expires_at: string }>(
       `INSERT INTO workspace_invitations
          (workspace_id, invited_by, email, role_id, token_hash, status, expires_at)
@@ -299,12 +293,6 @@ export async function acceptInvitation(
 
     // Diagnostic: log token details to confirm what's being looked up
     // Never logs full token — only length and first 8 chars
-    console.log("[acceptInvitation] token received:", {
-      length:    input.token.length,
-      prefix:    input.token.slice(0, 8),
-      hashPrefix: tokenHash.slice(0, 12),
-    });
-
     // Validate token
     const { rows: invRows } = await client.query<{
       id: string; workspace_id: string; email: string; role_id: string;
@@ -318,11 +306,6 @@ export async function acceptInvitation(
     );
 
     // Diagnostic: log whether a match was found
-    console.log("[acceptInvitation] DB lookup result:", {
-      found:     invRows.length > 0,
-      hashUsed:  tokenHash.slice(0, 12) + "...",
-    });
-
     if (invRows.length === 0) {
       await client.query("ROLLBACK");
       return { success: false, error: "Invalid or expired invitation link.", status: 400, code: "INVALID_TOKEN" };

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
           ALTER TABLE clients ADD CONSTRAINT chk_clients_crm_status
             CHECK (crm_status IN (
               'lead','qualified','proposal_sent','negotiation',
-              'advance_received','active_client','completed'
+              'advance_received','active_client','completed','lost'
             ))`);
       }
       await client.query(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS quoted_amount    NUMERIC(12,2) NULL`);

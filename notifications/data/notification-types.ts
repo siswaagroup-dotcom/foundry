@@ -4,6 +4,7 @@ export const notificationTypes: Record<NotificationType, string> = {
   member_invited: "Member invited",
   member_joined: "Member joined",
   role_changed: "Role changed",
+  team_role_changed: "Team role changed",
 
   task_assigned: "Task assigned",
   task_updated: "Task updated",

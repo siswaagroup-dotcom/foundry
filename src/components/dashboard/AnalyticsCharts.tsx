@@ -3,6 +3,11 @@
 import dynamic from "next/dynamic";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 
+type AnalyticsChartsProps = {
+  revenue: Array<{ month: string; revenue: number; expenses: number; tasks: number }>;
+  productivity: Array<{ team: string; value: number }>;
+};
+
 const AnalyticsChartsClient = dynamic(
   () =>
     import("./AnalyticsChartsClient").then(
@@ -26,6 +31,6 @@ function AnalyticsChartsSkeleton() {
   );
 }
 
-export function AnalyticsCharts() {
-  return <AnalyticsChartsClient />;
+export function AnalyticsCharts({ revenue, productivity }: AnalyticsChartsProps) {
+  return <AnalyticsChartsClient revenue={revenue} productivity={productivity} />;
 }

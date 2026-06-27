@@ -13,15 +13,22 @@ import {
 } from "recharts";
 
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
-import { productivityChart, revenueChart } from "@/lib/dashboard-data";
 
-export function AnalyticsChartsClient() {
+type AnalyticsChartsClientProps = {
+  revenue: Array<{ month: string; revenue: number; expenses: number; tasks: number }>;
+  productivity: Array<{ team: string; value: number }>;
+};
+
+export function AnalyticsChartsClient({
+  revenue,
+  productivity,
+}: AnalyticsChartsClientProps) {
   return (
     <div className="grid gap-4 xl:grid-cols-3">
       <DashboardCard title="Revenue Chart">
         <div className="h-60">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={revenueChart}>
+            <LineChart data={revenue}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
               <XAxis dataKey="month" fontSize={12} />
               <YAxis fontSize={12} />
@@ -35,7 +42,7 @@ export function AnalyticsChartsClient() {
       <DashboardCard title="Task Completion Chart">
         <div className="h-60">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={revenueChart}>
+            <BarChart data={revenue}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
               <XAxis dataKey="month" fontSize={12} />
               <YAxis fontSize={12} />
@@ -49,7 +56,7 @@ export function AnalyticsChartsClient() {
       <DashboardCard title="Team Productivity Chart">
         <div className="h-60">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={productivityChart} layout="vertical">
+            <BarChart data={productivity} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
               <XAxis type="number" fontSize={12} />
               <YAxis dataKey="team" type="category" fontSize={12} width={58} />

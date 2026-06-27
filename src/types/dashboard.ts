@@ -58,7 +58,7 @@ export type Deadline = {
 export type OverdueItem = {
   id: string;
   title: string;
-  type: "Client Documents" | "Payments" | "Meetings" | "Reports";
+  type: string;
   daysOverdue: number;
   amount?: number;
 };
@@ -78,4 +78,51 @@ export type SocialPost = {
   channel: string;
   status: "Scheduled" | "Draft" | "Published";
   engagement: string;
+};
+
+export type DashboardStats = {
+  activeProjects: number;
+  onlineMembers: number;
+  revenue: number;
+  expenses: number;
+  clients: number;
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  overdueTasks: number;
+  totalRevenue: number;
+  unpaidInvoices: number;
+  totalExpenses: number;
+  unreadNotifications: number;
+  teamMembers: number;
+};
+
+export type DashboardChartRow = {
+  month: string;
+  revenue: number;
+  expenses: number;
+  tasks: number;
+};
+
+export type DashboardProductivityRow = {
+  team: string;
+  value: number;
+};
+
+export type DashboardResponse = {
+  stats: DashboardStats;
+  charts: {
+    revenue: DashboardChartRow[];
+    productivity: DashboardProductivityRow[];
+  };
+  recentClients: Client[];
+  recentTasks: Task[];
+  recentExpenses: Expense[];
+  upcomingDeadlines: Deadline[];
+  overdueItems: OverdueItem[];
+  teamActivity: Activity[];
+  expenseStatusTotals: Array<{ status: string; total: number }>;
+  pipeline: Record<string, unknown>;
+  notifications: Array<{ id: string; title: string; body: string; createdAt: string }>;
+  unreadNotifications: number;
 };

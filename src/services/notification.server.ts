@@ -8,6 +8,7 @@ export type NotificationType =
   | "member_invited"
   | "member_joined"
   | "role_changed"
+  | "team_role_changed"
   | "task_assigned"
   | "task_updated"
   | "task_due_today"
@@ -39,7 +40,7 @@ export type NotificationEntityType =
   | "client"
   | "social_post"
   | "invitation"
-    "team";
+  | "team";
 
 export interface NotificationItem {
   id: string;

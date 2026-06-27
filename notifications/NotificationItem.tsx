@@ -25,7 +25,7 @@ export function NotificationItem({
   onDelete,
 }: NotificationItemProps) {
   const entityHref = notification.entityType && notification.entityId
-    ? `/${notification.entityType === "team" ? "dashboard/team" : `dashboard/${notification.entityType === "settings" ? "settings" : notification.entityType === "workspace" ? "settings" : notification.entityType === "project" ? "projects" : notification.entityType === "client" ? "clients" : notification.entityType === "expense" ? "expenses" : "tasks"}/${notification.entityId}`}`
+    ? `/${notification.entityType === "team" ? "dashboard/team" : `dashboard/${notification.entityType === "client" ? "clients" : notification.entityType === "expense" ? "expenses" : notification.entityType === "social_post" ? "social-posts" : notification.entityType === "invitation" ? "invitations" : "tasks"}/${notification.entityId}`}`
     : undefined;
 
   return (

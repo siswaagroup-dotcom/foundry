@@ -1,29 +1,11 @@
+"use client";
+
 import { Calendar, FolderKanban } from "lucide-react";
 import Link from "next/link";
 import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
-
-import {
-  activities,
-  clients,
-  deadlines,
-  expenses,
-  overdueItems,
-  quickStats,
-  tasks,
-} from "@/lib/dashboard-data";
-
-const completedTasks = tasks.filter(
-  (task) => task.completed
-).length;
-
-const remainingTasks =
-  tasks.length - completedTasks;
-
-const completion = Math.round(
-  (completedTasks / tasks.length) * 100
-);
+import { useDashboard } from "@/hooks/useDashboard";
 
 function currency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -33,21 +15,56 @@ function currency(value: number) {
   }).format(value);
 }
 
+const statusMapping: Record<string, string> = {
+  planned: "Planned",
+  submitted: "Submitted",
+  approved: "Approved",
+  pending: "Pending",
+};
+
 export default function DashboardPage() {
+  const dashboardQuery = useDashboard();
+  const data = dashboardQuery.data;
+
+  if (dashboardQuery.isLoading) {
+    return (
+      <div className="mx-auto max-w-[1500px] p-8 text-sm text-slate-500">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (!data || dashboardQuery.isError) {
+    return (
+      <div className="mx-auto max-w-[1500px] p-8 text-sm text-red-600">
+        Unable to load dashboard.
+      </div>
+    );
+  }
+
+  const completedTasks = data.recentTasks.filter((task) => task.completed).length;
+  const remainingTasks = data.recentTasks.length - completedTasks;
+  const completion = data.recentTasks.length
+    ? Math.round((completedTasks / data.recentTasks.length) * 100)
+    : 0;
+
+  const expenseTotals = new Map(
+    data.expenseStatusTotals.map((item) => [item.status.toLowerCase(), item.total]),
+  );
+
   return (
-     <>
       <div className="mx-auto grid max-w-[1500px] gap-4 xl:grid-cols-[1fr_340px]">
         <div className="space-y-4">
           <DashboardCard
             title="Today's Agenda"
             action={
               <span className="rounded-full bg-orange-50 px-2 py-1 text-xs font-semibold text-primary">
-                {tasks.length}
+                {data.recentTasks.length}
               </span>
             }
           >
             <div className="divide-y divide-[#edf0f3]">
-              {tasks.map((task) => (
+              {data.recentTasks.map((task) => (
                 <div
                   key={task.id}
                   className="grid gap-3 py-3 sm:grid-cols-[24px_1fr_auto] sm:items-center"
@@ -106,7 +123,7 @@ export default function DashboardPage() {
             }
           >
             <div className="divide-y divide-[#edf0f3]">
-              {overdueItems.map((item) => (
+              {data.overdueItems.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between gap-3 py-3"
@@ -155,25 +172,14 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="mt-1 text-lg font-bold">
-                    {currency(
-                      expenses
-                        .filter(
-                          (expense) =>
-                            expense.status === label
-                        )
-                        .reduce(
-                          (sum, expense) =>
-                            sum + expense.amount,
-                          0
-                        )
-                    )}
+                    {currency(expenseTotals.get(label.toLowerCase()) ?? 0)}
                   </p>
                 </div>
               ))}
             </div>
 
             <div className="divide-y divide-[#edf0f3]">
-              {expenses.map((expense) => (
+              {data.recentExpenses.map((expense) => (
                 <Link
                   key={expense.id}
                   href={`/dashboard/expenses/${expense.id}`}
@@ -195,7 +201,7 @@ export default function DashboardPage() {
                     </p>
 
                     <StatusBadge tone="orange">
-                      {expense.status}
+                      {statusMapping[expense.status.toLowerCase()] ?? expense.status}
                     </StatusBadge>
                   </div>
                 </Link>
@@ -205,7 +211,7 @@ export default function DashboardPage() {
 
           <DashboardCard title="Team Activity">
             <div className="max-h-[440px] space-y-3 overflow-y-auto pr-1">
-              {activities.map((activity) => (
+              {data.teamActivity.map((activity) => (
                 <div
                   key={activity.id}
                   className="flex gap-3"
@@ -231,7 +237,10 @@ export default function DashboardPage() {
             </div>
           </DashboardCard>
 
-          <AnalyticsCharts />
+          <AnalyticsCharts
+            revenue={data.charts.revenue}
+            productivity={data.charts.productivity}
+          />
         </div>
 
         <aside className="space-y-4">
@@ -241,7 +250,7 @@ export default function DashboardPage() {
             </p>
 
             <p className="mt-3 text-4xl font-bold">
-              {tasks.length}
+              {data.recentTasks.length}
             </p>
 
             <p className="mt-1 text-sm text-white/80">
@@ -262,26 +271,11 @@ export default function DashboardPage() {
           <DashboardCard title="Quick Stats">
             <div className="space-y-4">
               {[
-                [
-                  "Active Projects",
-                  quickStats.activeProjects,
-                ],
-                [
-                  "Team Members Online",
-                  quickStats.onlineMembers,
-                ],
-                [
-                  "Monthly Revenue",
-                  currency(quickStats.revenue),
-                ],
-                [
-                  "Monthly Expenses",
-                  currency(quickStats.expenses),
-                ],
-                [
-                  "Total Clients",
-                  quickStats.clients,
-                ],
+                ["Active Projects", data.stats.activeProjects],
+                ["Team Members Online", data.stats.onlineMembers],
+                ["Monthly Revenue", currency(data.stats.revenue)],
+                ["Monthly Expenses", currency(data.stats.expenses)],
+                ["Total Clients", data.stats.clients],
               ].map(([label, value]) => (
                 <div key={String(label)}>
                   <p className="text-xs uppercase text-[#6b7280]">
@@ -298,7 +292,7 @@ export default function DashboardPage() {
 
           <DashboardCard title="Upcoming Deadlines">
             <div className="space-y-4">
-              {deadlines.map((deadline) => (
+              {data.upcomingDeadlines.map((deadline) => (
                 <div key={deadline.id}>
                   <p className="text-sm font-semibold">
                     {deadline.project}
@@ -315,7 +309,7 @@ export default function DashboardPage() {
 
           <DashboardCard title="Recent Clients">
             <div className="space-y-3">
-              {clients.map((client) => (
+              {data.recentClients.map((client) => (
                 <Link
                   key={client.id}
                   href="/dashboard/clients/acme-corporation"
@@ -350,6 +344,5 @@ export default function DashboardPage() {
           </DashboardCard>
         </aside>
       </div>
-    </>
   );
 }

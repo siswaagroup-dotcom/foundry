@@ -1,42 +1,22 @@
-export type NotificationType =
-  | "task-assigned"
-  | "expense-approved"
-  | "client-added"
-  | "post-scheduled"
-  | "team-member-invited"
-  | "role-updated"
-  | "task-completed"
-  | "expense-rejected";
+import type { NotificationItem as ServerNotificationItem } from "@/services/notification.server";
 
-export type NotificationEntityType =
-  | "task"
-  | "expense"
-  | "client"
-  | "social"
-  | "team";
+export type NotificationType = ServerNotificationItem["type"];
+
+export type NotificationEntityType = NonNullable<ServerNotificationItem["entityType"]>;
 
 export type NotificationFilter =
   | "all"
   | "unread"
   | "tasks"
+  | "projects"
   | "expenses"
   | "clients"
-  | "social"
-  | "team";
+  | "team"
+  | "settings";
 
-export type Notification = {
-  id: string;
-  workspaceId: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  description: string;
-  user: string;
-  timestamp: string;
-  entityType: NotificationEntityType;
-  entityId: string;
-  isRead: boolean;
-  createdAt: string;
+export type Notification = ServerNotificationItem & {
+  actorName?: string | null;
+  timeAgo: string;
 };
 
 export type NotificationFilterOption = {

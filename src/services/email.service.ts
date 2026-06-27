@@ -31,7 +31,7 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error("[email.sendInvitationEmail] RESEND_API_KEY is not set — skipping email");
-    return;
+    throw new Error("[email.sendInvitationEmail] RESEND_API_KEY is not set");
   }
 
   const resend = new Resend(apiKey);
@@ -66,9 +66,11 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
 
     if (result.error) {
       console.error("[email.sendInvitationEmail] Resend error:", result.error);
+      throw new Error("[email.sendInvitationEmail] Resend failed to send invitation");
     }
   } catch (err) {
     console.error("[email.sendInvitationEmail] Unexpected error:", err);
+    throw err;
   }
 }
 

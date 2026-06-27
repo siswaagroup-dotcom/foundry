@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.success) {
     return apiError(parsed.error.errors[0]?.message ?? "Validation failed", 400, "VALIDATION_ERROR");
   }
-  const result = await updateTask(auth.ctx.workspaceId, id, parsed.data);
+  const result = await updateTask(auth.ctx.workspaceId, id, auth.ctx.userId, parsed.data);
   if (!result.success) return apiError(result.error, result.status);
   return apiSuccess(result.data);
 }

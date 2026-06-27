@@ -3,6 +3,7 @@
 // All queries are workspace-scoped for multi-tenant isolation.
 // =============================================================================
 import { db } from "@/lib/db";
+import { createNotification } from "@/services/notification.server";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -261,6 +262,18 @@ export async function createTask(
 
     await client.query("COMMIT");
 
+    await createNotification({
+      workspaceId,
+      userId: userId,
+      type: "task_assigned",
+      title: "Task created",
+      description: `Task "${input.title.trim()}" was created for you`,
+      actorId: userId,
+      entityType: "task",
+      entityId: taskId,
+      priority: "normal",
+    });
+
     const result = await getTask(workspaceId, taskId);
     return result;
   } catch (err) {
@@ -277,6 +290,7 @@ export async function createTask(
 export async function updateTask(
   workspaceId: string,
   taskId: string,
+  userId: string,
   input: UpdateTaskInput
 ): Promise<ServiceResult<Task>> {
   const client = await db.connect();
@@ -323,6 +337,19 @@ export async function updateTask(
         }
       }
     }
+
+    await createNotification({
+      workspaceId,
+      userId: userId,
+      type: "task_updated",
+      title: "Task updated",
+      description: `Task "${input.title?.trim() ?? "updated"}" was updated`,
+      actorId: userId,
+      entityType: "task",
+      entityId: taskId,
+      priority: "normal",
+      client,
+    });
 
     await client.query("COMMIT");
     return getTask(workspaceId, taskId);
@@ -412,6 +439,18 @@ export async function addComment(
        VALUES ($1, $2, $3, $4) RETURNING id`,
       [taskId, workspaceId, userId, body.trim()]
     );
+
+    await createNotification({
+      workspaceId,
+      userId,
+      type: "task_comment_added",
+      title: "New comment on task",
+      description: "A new comment was added to the task",
+      actorId: userId,
+      entityType: "task",
+      entityId: taskId,
+      priority: "normal",
+    });
 
     const commentId = rows[0].id;
     const { rows: full } = await db.query<{

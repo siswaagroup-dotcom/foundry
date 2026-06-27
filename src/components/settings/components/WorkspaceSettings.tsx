@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
- 
-import type { WorkspaceSetting } from "../../../../settings/types/settings-types";
+
+import type { WorkspaceSetting } from "../types/settings-types";
 import { SettingsField } from "./fields/SettingsField";
 
 type WorkspaceSettingsProps = {

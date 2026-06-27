@@ -14,6 +14,7 @@ import {
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth, useLogout } from "@/hooks/useAuth";
+import { useUnreadCount } from "@/hooks/useNotifications";
 import { navItems } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +113,7 @@ export function DashboardShell({
   const router = useRouter();
   const auth = useAuth();
   const logoutMutation = useLogout();
+  const unreadCount = useUnreadCount();
   const openMobileNav = useCallback(() => setMobileOpen(true), []);
   const closeMobileNav = useCallback(() => setMobileOpen(false), []);
   const handleLogout = useCallback(async () => {
@@ -247,9 +249,14 @@ export function DashboardShell({
             <button
               type="button"
               onClick={openNotifications}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#4b5563]"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#4b5563]"
             >
               <Bell className="h-4 w-4" />
+              {unreadCount.data && unreadCount.data > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
+                  {unreadCount.data > 9 ? "9+" : unreadCount.data}
+                </span>
+              ) : null}
             </button>
 
             <button

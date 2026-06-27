@@ -1,38 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { notificationsData } from "../data/notifications-data";
-import type {
-  Notification,
-  NotificationEntityType,
-  NotificationFilter,
-} from "../types/notification-types";
+import { notificationFilters } from "../data/notification-types";
+import type { Notification, NotificationFilter } from "../types/notification-types";
 
-const filterEntityMap: Partial<Record<NotificationFilter, NotificationEntityType>> = {
-  tasks: "task",
-  expenses: "expense",
-  clients: "client",
-  social: "social",
-  team: "team",
-};
-
-function filterNotifications(
-  notifications: Notification[],
-  activeFilter: NotificationFilter,
-) {
+function filterNotifications(notifications: Notification[], activeFilter: NotificationFilter) {
   if (activeFilter === "all") return notifications;
   if (activeFilter === "unread") {
     return notifications.filter((notification) => !notification.isRead);
   }
 
-  return notifications.filter(
-    (notification) => notification.entityType === filterEntityMap[activeFilter],
-  );
+  return notifications.filter((notification) => {
+    if (activeFilter === "tasks") return notification.type.startsWith("task_");
+    if (activeFilter === "projects") return notification.type.startsWith("project_") || notification.type.startsWith("milestone_");
+    if (activeFilter === "expenses") return notification.type.startsWith("expense_");
+    if (activeFilter === "clients") return notification.type.startsWith("client_");
+    if (activeFilter === "team") return notification.type.startsWith("team_");
+    if (activeFilter === "settings") return notification.type.startsWith("settings_");
+    return false;
+  });
 }
 
 export function useNotifications() {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(notificationsData);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>("all");
 
   const filteredNotifications = useMemo(
@@ -46,28 +36,19 @@ export function useNotifications() {
   );
 
   function markAsRead(notificationId: string) {
-    console.log(notificationId);
     setNotifications((current) =>
       current.map((notification) =>
-        notification.id === notificationId
-          ? { ...notification, isRead: true }
-          : notification,
+        notification.id === notificationId ? { ...notification, isRead: true } : notification,
       ),
     );
   }
 
   function markAllAsRead() {
-    console.log("mark-all-read");
-    setNotifications((current) =>
-      current.map((notification) => ({ ...notification, isRead: true })),
-    );
+    setNotifications((current) => current.map((notification) => ({ ...notification, isRead: true })));
   }
 
   function deleteNotification(notificationId: string) {
-    console.log(notificationId);
-    setNotifications((current) =>
-      current.filter((notification) => notification.id !== notificationId),
-    );
+    setNotifications((current) => current.filter((notification) => notification.id !== notificationId));
   }
 
   return {
@@ -79,5 +60,6 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    filters: notificationFilters,
   };
 }

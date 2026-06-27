@@ -18,3 +18,4 @@ export function titleFor(tab: SettingsTab): string {
       return "Billing";
   }
 }
+

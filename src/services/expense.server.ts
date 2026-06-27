@@ -3,6 +3,7 @@
 // All queries are workspace-scoped for multi-tenant isolation.
 // =============================================================================
 import { db } from "@/lib/db";
+import { createNotification } from "@/services/notification.server";
 import type {
   Expense, ExpenseApproval, ExpenseAttachment, ExpenseFilters,
   CreateExpenseInput, UpdateExpenseInput,
@@ -206,6 +207,18 @@ export async function createExpense(workspaceId: string, userId: string, input: 
     await c.query(`INSERT INTO expense_approvals (expense_id,workspace_id,approver_id,stage) VALUES ($1,$2,$3,'submitted')`, [expenseId, workspaceId, userId]);
     if ((input.status ?? "planned") === "pending") {
       await notify(c, workspaceId, expenseId, userId, "expense_submitted", "Expense submitted for approval", input.name.trim());
+      await createNotification({
+        workspaceId,
+        userId,
+        type: "expense_submitted",
+        title: "Expense submitted",
+        description: input.name.trim(),
+        actorId: userId,
+        entityType: "expense",
+        entityId: expenseId,
+        priority: "normal",
+        client: c,
+      });
     }
     await c.query("COMMIT");
     return getExpense(workspaceId, expenseId);
@@ -294,7 +307,21 @@ export async function approveExpense(workspaceId: string, expenseId: string, app
       paid:     { type: "expense_paid",     title: "Expense marked as paid" },
     };
     const n = notifMap[input.stage];
-    if (n) await notify(c, workspaceId, expenseId, approverId, n.type, n.title, input.comment?.trim()||null);
+    if (n) {
+      await notify(c, workspaceId, expenseId, approverId, n.type, n.title, input.comment?.trim()||null);
+      await createNotification({
+        workspaceId,
+        userId: approverId,
+        type: input.stage === "approved" ? "expense_approved" : input.stage === "rejected" ? "expense_rejected" : "expense_reimbursement_completed",
+        title: n.title,
+        description: input.comment?.trim() || null,
+        actorId: approverId,
+        entityType: "expense",
+        entityId: expenseId,
+        priority: input.stage === "rejected" ? "high" : "normal",
+        client: c,
+      });
+    }
 
     await c.query("COMMIT");
     return getExpense(workspaceId, expenseId);

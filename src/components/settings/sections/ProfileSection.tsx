@@ -1,4 +1,4 @@
-import { WorkspaceSettings } from "@/components/dashboard/WorkspaceSettings";
+import { WorkspaceSettings } from "@/components/settings/components/WorkspaceSettings";
 import type { WorkspaceSetting } from "../types/settings-types";
 import type { FormState } from "../utils/form-from-settings";
 import { passwordFields } from "../utils/settings-fields";

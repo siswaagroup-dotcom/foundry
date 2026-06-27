@@ -1,4 +1,4 @@
-import { WorkspaceSettings } from "@/components/dashboard/WorkspaceSettings";
+import { WorkspaceSettings } from "@/components/settings/components/WorkspaceSettings";
 import type { WorkspaceSetting } from "../types/settings-types";
 
 type Props = {

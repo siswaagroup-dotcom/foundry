@@ -9,6 +9,7 @@ export type NotificationType =
   | "member_joined"
   | "role_changed"
   | "team_role_changed"
+  | "team_member_removed"
   | "task_assigned"
   | "task_updated"
   | "task_due_today"
@@ -31,16 +32,31 @@ export type NotificationType =
   | "client_project_won"
   | "settings_workspace_updated"
   | "settings_integrations_connected"
-  | "settings_api_key_changed";
+  | "settings_api_key_changed"
+  | "social_publish_success"
+  | "social_publish_failed"
+  | "social_token_expired"
+  | "social_connection_lost"
+  | "social_scheduled_published"
+  | "social_approval_required";
 
 
 export type NotificationEntityType =
   | "task"
+  | "project"
   | "expense"
   | "client"
+  | "social"
   | "social_post"
+  | "social_account"
+  | "social_integration"
   | "invitation"
-  | "team";
+  | "team"
+  | "settings"
+  | "workspace"
+  | "invoice"
+  | "billing"
+  | "report";
 
 export interface NotificationItem {
   id: string;
@@ -132,13 +148,20 @@ function buildFilterClause(filter: string | undefined): string | null {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VALID_ENTITY_TYPES = new Set([
   "task",
+  "project",
   "client",
   "expense",
-  "project",
-  "invoice",
+  "social",
   "social_post",
+  "social_account",
+  "social_integration",
   "invitation",
   "team",
+  "settings",
+  "workspace",
+  "invoice",
+  "billing",
+  "report",
 ]);
 
 function assertUuid(field: string, value: string): void {

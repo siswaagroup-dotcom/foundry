@@ -23,6 +23,9 @@ export interface UploadedMedia {
   id: string;
   name: string;
   type: string;
+  fileUrl: string;
+  mimeType: string;
+  fileSizeBytes: number;
   previewUrl: string;
 }
 

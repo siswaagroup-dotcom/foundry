@@ -44,6 +44,18 @@ export interface AuthSession {
   workspaceName: string;
 }
 
+export interface OAuthProfileInput {
+  provider: "google";
+  providerUserId: string;
+  email: string;
+  name: string;
+  avatarUrl?: string | null;
+  emailVerified?: boolean;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  expiresAt?: Date | null;
+}
+
 export type ServiceResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; status: number; code?: string };
@@ -152,6 +164,66 @@ async function getPrimaryWorkspace(
   return rows[0] ?? null;
 }
 
+async function createStarterWorkspaceForUser(
+  client: PoolClient,
+  input: {
+    userId: string;
+    workspaceName: string;
+    businessType?: string;
+    timezone?: string;
+    currency?: string;
+  }
+): Promise<AuthWorkspace | null> {
+  const { rows: planRows } = await client.query<{ id: string }>(
+    "SELECT id FROM plans WHERE name = 'starter' AND is_active = TRUE LIMIT 1"
+  );
+
+  if (!planRows[0]) {
+    return null;
+  }
+
+  const planId = planRows[0].id;
+  const slug = await createUniqueWorkspaceSlug(client, input.workspaceName);
+  const { rows: workspaceRows } = await client.query<{
+    id: string;
+    name: string;
+    slug: string;
+  }>(
+    `INSERT INTO workspaces
+       (name, slug, owner_id, business_type, timezone, currency, plan_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, name, slug`,
+    [
+      input.workspaceName.trim(),
+      slug,
+      input.userId,
+      input.businessType?.trim() || null,
+      input.timezone?.trim() || "UTC",
+      (input.currency?.trim() || "USD").toUpperCase(),
+      planId,
+    ]
+  );
+
+  const workspace = workspaceRows[0];
+
+  await client.query("SELECT initialize_workspace($1, $2)", [
+    workspace.id,
+    input.userId,
+  ]);
+
+  const now = new Date();
+  const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+  await client.query(
+    `INSERT INTO subscriptions
+       (workspace_id, plan_id, status, billing_cycle, current_period_start, current_period_end, trial_ends_at)
+     VALUES ($1, $2, 'trialing', 'monthly', $3, $4, $4)`,
+    [workspace.id, planId, now, trialEndsAt]
+  );
+
+  return getPrimaryWorkspace(client, input.userId);
+}
+
 export async function signUp(
   input: SignUpInput,
   request?: Request
@@ -189,57 +261,13 @@ export async function signUp(
     );
 
     const user = userRows[0];
-    const { rows: planRows } = await client.query<{ id: string }>(
-      "SELECT id FROM plans WHERE name = 'starter' AND is_active = TRUE LIMIT 1"
-    );
-
-    if (!planRows[0]) {
-      await client.query("ROLLBACK");
-      return {
-        success: false,
-        error: "Starter plan is not configured.",
-        status: 500,
-        code: "PLAN_MISSING",
-      };
-    }
-
-    const planId = planRows[0].id;
-    const slug = await createUniqueWorkspaceSlug(client, input.workspaceName);
-    const { rows: workspaceRows } = await client.query<{
-      id: string;
-      name: string;
-      slug: string;
-    }>(
-      `INSERT INTO workspaces
-         (name, slug, owner_id, business_type, timezone, currency, plan_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, name, slug`,
-      [
-        input.workspaceName.trim(),
-        slug,
-        user.id,
-        input.businessType?.trim() || null,
-        input.timezone?.trim() || "UTC",
-        (input.currency?.trim() || "USD").toUpperCase(),
-        planId,
-      ]
-    );
-
-    const workspace = workspaceRows[0];
-
-    await client.query("SELECT initialize_workspace($1, $2)", [workspace.id, user.id]);
-
-    const now = new Date();
-    const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-    await client.query(
-      `INSERT INTO subscriptions
-         (workspace_id, plan_id, status, billing_cycle, current_period_start, current_period_end, trial_ends_at)
-       VALUES ($1, $2, 'trialing', 'monthly', $3, $4, $4)`,
-      [workspace.id, planId, now, trialEndsAt]
-    );
-
-    const ownerWorkspace = await getPrimaryWorkspace(client, user.id);
+    const ownerWorkspace = await createStarterWorkspaceForUser(client, {
+      userId: user.id,
+      workspaceName: input.workspaceName,
+      businessType: input.businessType,
+      timezone: input.timezone,
+      currency: input.currency,
+    });
 
     if (!ownerWorkspace) {
       await client.query("ROLLBACK");
@@ -278,6 +306,158 @@ export async function signUp(
       error: "Failed to create account. Please try again.",
       status: 500,
       code: "SIGNUP_FAILED",
+    };
+  } finally {
+    client?.release();
+  }
+}
+
+export async function signInWithOAuth(
+  profile: OAuthProfileInput,
+  request?: Request
+): Promise<ServiceResult<AuthSession>> {
+  let client: PoolClient | null = null;
+
+  try {
+    client = await db.connect();
+    await client.query("BEGIN");
+
+    const email = normalizeEmail(profile.email);
+    const { rows: existingUsers } = await client.query<{
+      id: string;
+      name: string;
+      email: string;
+      email_verified: boolean;
+    }>(
+      `SELECT id, name, email, email_verified
+       FROM users
+       WHERE email = $1 AND deleted_at IS NULL
+       LIMIT 1`,
+      [email]
+    );
+
+    let user = existingUsers[0];
+
+    if (!user) {
+      const { rows: userRows } = await client.query<{
+        id: string;
+        name: string;
+        email: string;
+        email_verified: boolean;
+      }>(
+        `INSERT INTO users
+           (name, email, password_hash, avatar_url, email_verified, email_verified_at)
+         VALUES ($1, $2, NULL, $3, $4, CASE WHEN $4 THEN NOW() ELSE NULL END)
+         RETURNING id, name, email, email_verified`,
+        [
+          profile.name.trim() || email.split("@")[0],
+          email,
+          profile.avatarUrl ?? null,
+          Boolean(profile.emailVerified),
+        ]
+      );
+
+      user = userRows[0];
+
+      const workspace = await createStarterWorkspaceForUser(client, {
+        userId: user.id,
+        workspaceName: `${user.name}'s Workspace`,
+      });
+
+      if (!workspace) {
+        await client.query("ROLLBACK");
+        return {
+          success: false,
+          error: "Starter plan is not configured.",
+          status: 500,
+          code: "PLAN_MISSING",
+        };
+      }
+    } else {
+      await client.query(
+        `UPDATE users
+         SET name = COALESCE(NULLIF($2, ''), name),
+             avatar_url = COALESCE($3, avatar_url),
+             email_verified = email_verified OR $4,
+             email_verified_at = CASE
+               WHEN email_verified_at IS NULL AND $4 THEN NOW()
+               ELSE email_verified_at
+             END,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [
+          user.id,
+          profile.name.trim(),
+          profile.avatarUrl ?? null,
+          Boolean(profile.emailVerified),
+        ]
+      );
+    }
+
+    await client.query(
+      `INSERT INTO oauth_accounts
+         (user_id, provider, provider_user_id, access_token_encrypted, refresh_token_encrypted, token_expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (provider, provider_user_id)
+       DO UPDATE SET
+         user_id = EXCLUDED.user_id,
+         access_token_encrypted = EXCLUDED.access_token_encrypted,
+         refresh_token_encrypted = COALESCE(EXCLUDED.refresh_token_encrypted, oauth_accounts.refresh_token_encrypted),
+         token_expires_at = EXCLUDED.token_expires_at,
+         updated_at = NOW()`,
+      [
+        user.id,
+        profile.provider,
+        profile.providerUserId,
+        profile.accessToken ?? null,
+        profile.refreshToken ?? null,
+        profile.expiresAt ?? null,
+      ]
+    );
+
+    const workspace = await getPrimaryWorkspace(client, user.id);
+
+    if (!workspace) {
+      await client.query("ROLLBACK");
+      return {
+        success: false,
+        error: "No active workspace found for this account.",
+        status: 403,
+        code: "WORKSPACE_MISSING",
+      };
+    }
+
+    const tokens = await createSessionTokens(client, user, request);
+
+    await client.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [
+      user.id,
+    ]);
+    await client.query("COMMIT");
+
+    return {
+      success: true,
+      data: toSession({
+        ...tokens,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          emailVerified: user.email_verified || Boolean(profile.emailVerified),
+        },
+        workspace,
+      }),
+    };
+  } catch (error) {
+    if (client) {
+      await client.query("ROLLBACK").catch(() => undefined);
+    }
+    console.error("[auth.oauth]", error);
+
+    return {
+      success: false,
+      error: "Google sign in failed. Please try again.",
+      status: 500,
+      code: "OAUTH_LOGIN_FAILED",
     };
   } finally {
     client?.release();

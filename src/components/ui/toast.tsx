@@ -1,10 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ToastVariant = "success" | "error";
+type ToastVariant = "success" | "error" | "warning";
 
 type Toast = {
   id: number;
@@ -37,7 +37,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="fixed right-4 top-4 z-50 flex w-[calc(100%-32px)] max-w-sm flex-col gap-2">
         {toasts.map((item) => {
-          const Icon = item.variant === "success" ? CheckCircle2 : XCircle;
+          const Icon =
+            item.variant === "success"
+              ? CheckCircle2
+              : item.variant === "warning"
+                ? AlertTriangle
+                : XCircle;
           return (
             <div
               key={item.id}
@@ -45,6 +50,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 "rounded-xl border bg-white p-3 shadow-lg",
                 item.variant === "success"
                   ? "border-emerald-200"
+                  : item.variant === "warning"
+                    ? "border-amber-200"
                   : "border-red-200",
               )}
             >
@@ -54,6 +61,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     "mt-0.5 h-4 w-4",
                     item.variant === "success"
                       ? "text-emerald-600"
+                      : item.variant === "warning"
+                        ? "text-amber-600"
                       : "text-red-600",
                   )}
                 />

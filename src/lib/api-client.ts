@@ -38,6 +38,19 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return parseResponse<T>(res);
 }
 
+export async function apiPostForm<T>(
+  path: string,
+  body: FormData,
+): Promise<T> {
+  const token = getAccessToken();
+  const res = await fetch(path, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body,
+  });
+  return parseResponse<T>(res);
+}
+
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
     method: "PATCH",

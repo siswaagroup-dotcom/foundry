@@ -5,6 +5,7 @@ export const notificationTypes: Record<NotificationType, string> = {
   member_joined: "Member joined",
   role_changed: "Role changed",
   team_role_changed: "Team role changed",
+  team_member_removed: "Team member removed",
 
   task_assigned: "Task assigned",
   task_updated: "Task updated",
@@ -33,6 +34,13 @@ export const notificationTypes: Record<NotificationType, string> = {
   settings_workspace_updated: "Workspace updated",
   settings_integrations_connected: "Integrations connected",
   settings_api_key_changed: "API key changed",
+
+  social_publish_success: "Social post published",
+  social_publish_failed: "Social publish failed",
+  social_token_expired: "Social token expired",
+  social_connection_lost: "Social connection lost",
+  social_scheduled_published: "Scheduled post published",
+  social_approval_required: "Social approval required",
 };
 
 export const notificationFilters: NotificationFilterOption[] = [

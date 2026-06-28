@@ -18,6 +18,10 @@ export function SocialWorkspace() {
     () => router.push("/dashboard/social/create"),
     [router],
   );
+  const connectedAccounts = useCallback(
+    () => router.push("/dashboard/social/accounts"),
+    [router],
+  );
   const selectPost = useCallback(
     (postId: string) => router.push(`/dashboard/social/${postId}`),
     [router],
@@ -30,6 +34,7 @@ export function SocialWorkspace() {
           selectedView={social.selectedView}
           onViewChange={social.setSelectedView}
           onCreatePost={createPost}
+          onConnectedAccounts={connectedAccounts}
         />
 
         <SocialFilters
@@ -48,7 +53,15 @@ export function SocialWorkspace() {
 
       <div className="grid border-t border-[#E5E7EB] bg-[#f8fafc] lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="px-4 py-6 sm:px-6 lg:px-6">
-          {social.selectedView === "calendar" ? (
+          {social.isLoading ? (
+            <div className="rounded-xl border border-[#E5E7EB] bg-white p-8 text-sm font-medium text-[#526173]">
+              Loading social posts...
+            </div>
+          ) : social.error ? (
+            <div className="rounded-xl border border-[#FCA5A5] bg-white p-8 text-sm font-medium text-[#991B1B]">
+              Unable to load social posts.
+            </div>
+          ) : social.selectedView === "calendar" ? (
             <SocialCalendar
               monthTitle={social.monthTitle}
               days={social.calendarDays}

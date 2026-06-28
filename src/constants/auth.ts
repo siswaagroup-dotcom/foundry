@@ -6,8 +6,7 @@ export const AUTH_TABS: AuthTab[] = [
 ];
 
 export const SOCIAL_PROVIDERS: SocialProvider[] = [
-  { id: "google", label: "Google" },
-  { id: "facebook", label: "Facebook" },
+  { id: "google", label: "Continue with Google" },
 ];
 
 export const AUTH_COPY: Record<AuthMode, { title: string; subtitle: string }> = {

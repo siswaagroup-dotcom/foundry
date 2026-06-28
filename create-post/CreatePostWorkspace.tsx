@@ -17,11 +17,29 @@ export function CreatePostWorkspace() {
       <CreatePostHeader />
       <main className="border-t border-[#f1f5f9] bg-[#f8fafc] px-4 py-8">
         <div className="mx-auto max-w-[880px] space-y-6">
-          <AccountSelector
-            accounts={post.accounts}
-            selectedAccounts={post.selectedAccounts}
-            onToggle={post.toggleAccount}
-          />
+          {post.isLoading ? (
+            <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 text-sm font-medium text-[#6b7280]">
+              Loading connected accounts...
+            </div>
+          ) : post.error ? (
+            <div className="rounded-xl border border-red-200 bg-white p-5 text-sm font-medium text-red-700">
+              Unable to load social accounts.
+            </div>
+          ) : post.accounts.length === 0 ? (
+            <section className="rounded-xl border border-[#e5e7eb] bg-white p-8 text-center">
+              <h2 className="text-lg font-bold text-[#111827]">No connected accounts</h2>
+              <p className="mt-2 text-sm text-[#64748b]">
+                Connect a social account before publishing.
+              </p>
+              <Button className="mt-5" onClick={post.connectAccounts}>Connect Account</Button>
+            </section>
+          ) : (
+            <AccountSelector
+              accounts={post.accounts}
+              selectedAccounts={post.selectedAccounts}
+              onToggle={post.toggleAccount}
+            />
+          )}
           <PostContent
             content={post.content}
             config={post.config}
@@ -45,8 +63,9 @@ export function CreatePostWorkspace() {
           />
           <div className="flex flex-wrap justify-end gap-3">
             <Button variant="outline" onClick={post.cancel}>Cancel</Button>
-            <Button variant="outline" onClick={post.saveDraft}>Save Draft</Button>
-            <Button onClick={post.schedulePost}>Schedule Post</Button>
+            <Button variant="outline" onClick={post.saveDraft} disabled={post.isSubmitting}>Save Draft</Button>
+            <Button onClick={post.schedulePost} disabled={post.isSubmitting}>Schedule Post</Button>
+            <Button onClick={post.publishNow} disabled={post.isSubmitting}>Publish</Button>
           </div>
         </div>
       </main>

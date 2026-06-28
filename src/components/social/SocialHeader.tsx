@@ -1,4 +1,4 @@
-import { Calendar, List, Plus } from "lucide-react";
+import { Calendar, Link2, List, Plus } from "lucide-react";
 import { memo } from "react";
 
 import { cn } from "@/lib/utils";
@@ -9,12 +9,14 @@ type SocialHeaderProps = {
   selectedView: SocialView;
   onViewChange: (view: SocialView) => void;
   onCreatePost: () => void;
+  onConnectedAccounts: () => void;
 };
 
 export const SocialHeader = memo(function SocialHeader({
   selectedView,
   onViewChange,
   onCreatePost,
+  onConnectedAccounts,
 }: SocialHeaderProps) {
   return (
     <header className="flex flex-wrap items-center justify-between gap-4">
@@ -44,6 +46,15 @@ export const SocialHeader = memo(function SocialHeader({
             </button>
           ))}
         </div>
+
+        <button
+          type="button"
+          onClick={onConnectedAccounts}
+          className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-4 text-xs font-bold text-[#334155] transition hover:bg-[#f8fafc]"
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          Connected Accounts
+        </button>
 
         <button
           type="button"

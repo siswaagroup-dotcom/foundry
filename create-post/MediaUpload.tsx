@@ -4,7 +4,7 @@ import type { CreatePostConfig, UploadedMedia } from "./types/create-post-types"
 type MediaUploadProps = {
   config: CreatePostConfig;
   media: UploadedMedia[];
-  onUpload: (files: File[]) => void;
+  onUpload: (files: File[]) => Promise<void>;
 };
 
 export function MediaUpload({ config, media, onUpload }: MediaUploadProps) {
@@ -26,7 +26,14 @@ export function MediaUpload({ config, media, onUpload }: MediaUploadProps) {
           type="file"
           multiple
           accept={config.acceptedMedia}
-          onChange={(event) => onUpload(Array.from(event.target.files ?? []))}
+          onChange={(event) => {
+            void onUpload(Array.from(event.target.files ?? [])).catch(
+              (error) => {
+                console.error("Create post media upload failed", error);
+              },
+            );
+            event.currentTarget.value = "";
+          }}
           className="sr-only"
         />
       </label>

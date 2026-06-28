@@ -1,4 +1,4 @@
-import { ArrowLeft, Edit3, MoreVertical } from "lucide-react";
+import { ArrowLeft, Edit3, Loader2, MoreVertical, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SocialPostDetail } from "./types/social-post-detail-types";
 
@@ -7,9 +7,21 @@ type PostHeaderProps = {
   onBack: () => void;
   onEdit: () => void;
   onMore: () => void;
+  onPublish: () => void;
+  isPublishing?: boolean;
 };
 
-export function PostHeader({ post, onBack, onEdit, onMore }: PostHeaderProps) {
+export function PostHeader({
+  post,
+  onBack,
+  onEdit,
+  onMore,
+  onPublish,
+  isPublishing,
+}: PostHeaderProps) {
+  const publishDisabled =
+    isPublishing || post.status === "published" || post.status === "publishing";
+
   return (
     <div className="flex flex-col gap-3 border-b border-[#e5e7eb] pb-5 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex min-w-0 flex-wrap items-center gap-3">
@@ -29,9 +41,22 @@ export function PostHeader({ post, onBack, onEdit, onMore }: PostHeaderProps) {
           <Edit3 className="h-4 w-4" />
           Edit Post
         </Button>
+        <Button
+          onClick={onPublish}
+          disabled={publishDisabled}
+          className="h-10"
+        >
+          {isPublishing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+          {isPublishing ? "Publishing..." : "Publish"}
+        </Button>
         <button
           type="button"
           onClick={onMore}
+          disabled={isPublishing}
           className="inline-flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#e5e7eb] bg-white text-[#4b5563] hover:bg-[#f8fafc]"
           aria-label="More actions"
         >

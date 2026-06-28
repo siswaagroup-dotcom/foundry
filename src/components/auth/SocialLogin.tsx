@@ -23,35 +23,24 @@ function GoogleIcon() {
     </svg>
   );
 }
-
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#1877F2" />
-      <path
-        fill="#fff"
-        d="M13.3 18v-5.44h1.82l.27-2.12H13.3V9.09c0-.61.17-1.03 1.05-1.03h1.12v-1.9c-.19-.03-.86-.08-1.64-.08-1.62 0-2.73.99-2.73 2.81v1.55H9.27v2.12h1.83V18h2.2z"
-      />
-    </svg>
-  );
-}
-
 export function SocialLogin() {
+  const provider = SOCIAL_PROVIDERS[0];
+  const label = provider?.label ?? "Google";
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {SOCIAL_PROVIDERS.map((provider) => (
-        <div key={provider.id}>
-          <Button
-            type="button"
-            variant="outline"
-            size="social"
-            className="h-10 w-full gap-2 text-[13px] font-medium sm:h-11"
-          >
-            {provider.id === "google" ? <GoogleIcon /> : <FacebookIcon />}
-            {provider.label}
-          </Button>
-        </div>
-      ))}
+    <div className="flex justify-center">
+      <Button
+        type="button"
+        variant="outline"
+        size="social"
+        onClick={() => {
+          window.location.href = "/api/auth/google/login";
+        }}
+        className="h-10 w-full max-w-[320px] gap-2 text-[13px] font-medium sm:h-11"
+      >
+        <GoogleIcon />
+        {label}
+      </Button>
     </div>
   );
 }

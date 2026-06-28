@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SocialAccount } from "./types/create-post-types";
 
@@ -8,7 +8,7 @@ type AccountCardProps = {
   onToggle: (id: string) => void;
 };
 
-const icons = { facebook: Facebook, instagram: Instagram, linkedin: Linkedin, twitter: Twitter };
+const icons = { facebook: Facebook, instagram: Instagram, linkedin: Linkedin, twitter: Twitter, youtube: Youtube };
 
 export function AccountCard({ account, selected, onToggle }: AccountCardProps) {
   const Icon = icons[account.icon as keyof typeof icons] ?? Twitter;

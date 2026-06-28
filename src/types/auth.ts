@@ -15,7 +15,7 @@ export type AuthTab = {
 };
 
 export type SocialProvider = {
-  id: "google" | "facebook";
+  id: "google";
   label: string;
 };
 

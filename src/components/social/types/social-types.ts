@@ -18,6 +18,7 @@ export interface SocialAccount {
   followers: string;
   platform: string;
   accent: string;
+  status?: string;
 }
 
 export type SocialFilterOption = {

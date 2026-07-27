@@ -895,6 +895,47 @@ const credentialsEncrypted =
   }
 }
 
+export async function getSocialIntegrationCredentials(
+  integrationId: string,
+  workspaceId: string,
+): Promise<ServiceResult<Record<string, string>>> {
+  try {
+    const { rows } = await db.query<{
+      credentials_encrypted: string | null;
+      credential_keys: string[] | null;
+    }>(
+      `SELECT credentials_encrypted, credential_keys
+       FROM social_integrations
+       WHERE id = $1 AND workspace_id = $2 AND deleted_at IS NULL
+       LIMIT 1`,
+      [integrationId, workspaceId],
+    );
+
+    if (!rows[0]) {
+      return { success: false, error: "Integration not found", status: 404, code: "NOT_FOUND" };
+    }
+
+    const decrypted = decryptJson<Record<string, string>>(
+      rows[0].credentials_encrypted ?? null,
+    );
+
+    const keys = rows[0].credential_keys ?? [];
+    const result: Record<string, string> = {};
+    for (const key of keys) {
+      result[key] = decrypted?.[key] ?? "";
+    }
+
+    return { success: true, data: result };
+  } catch (error) {
+    return {
+      success: false,
+      error: "Failed to fetch credentials",
+      status: 500,
+      code: "CREDENTIALS_FETCH_FAILED",
+    };
+  }
+}
+
 export async function testSocialIntegration(
   workspaceId: string,
   userId: string,

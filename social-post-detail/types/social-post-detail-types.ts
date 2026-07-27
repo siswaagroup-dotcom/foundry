@@ -26,4 +26,5 @@ export interface RelatedItem {
 export interface BreadcrumbItem {
   id: string;
   label: string;
+  href?: string;
 }

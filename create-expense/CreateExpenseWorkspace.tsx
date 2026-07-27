@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CreditCard, Home, Info, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,9 @@ export function CreateExpenseWorkspace() {
       <header className="border-b border-[#e5e7eb] px-7 py-6">
         <nav className="mb-5 flex items-center gap-2 text-xs text-[#6b7280]">
           <Home className="h-3.5 w-3.5" />
-          <span>Expenses</span>
+          <Link href="/dashboard/expenses" className="text-primary hover:underline transition-colors">
+            Expenses
+          </Link>
           <span>/</span>
           <span className="font-semibold text-primary">Create Expense</span>
         </nav>

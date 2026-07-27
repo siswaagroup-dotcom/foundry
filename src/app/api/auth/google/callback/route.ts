@@ -80,7 +80,8 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
+  // Always derive from the actual request origin — matches whatever environment is running
+  const appUrl = req.nextUrl.origin;
 
   if (!clientId || !clientSecret) {
     return redirectToAuthError(req, "Google OAuth is not configured.");

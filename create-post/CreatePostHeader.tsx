@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { LayoutPanelTop } from "lucide-react";
 
 export function CreatePostHeader() {
   return (
     <header className="border-b border-[#e5e7eb] px-7 py-6">
       <nav className="mb-5 flex items-center gap-2 text-xs text-[#6b7280]">
-        <span>Posts</span>
+        <Link href="/dashboard/social" className="text-primary hover:underline transition-colors">
+          Posts
+        </Link>
         <span>/</span>
         <span className="font-semibold text-[#111827]">Create Post</span>
       </nav>

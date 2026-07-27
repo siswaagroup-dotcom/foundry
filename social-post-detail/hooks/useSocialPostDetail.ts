@@ -75,7 +75,7 @@ export function useSocialPostDetail() {
 
   const breadcrumbs = useMemo(
     () => [
-      { id: "social", label: "Social" },
+      { id: "social", label: "Social", href: "/dashboard/social" },
       { id: post.id, label: post.title },
     ],
     [post.id, post.title],

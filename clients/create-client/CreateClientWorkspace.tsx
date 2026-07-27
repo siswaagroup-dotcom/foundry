@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
@@ -80,22 +81,31 @@ export function CreateClientWorkspace({ onCancel }: { onCancel?: () => void }) {
 
   return (
     <div className="min-h-full bg-[#f5f7fb]">
-      <div className="sticky top-0 z-10 flex h-[72px] items-center justify-end gap-3 border-b border-[#edf0f3] bg-white px-6">
-        <button
-          onClick={cancel}
-          disabled={isPending}
-          className="inline-flex h-10 items-center gap-2 rounded border border-[#e5e7eb] px-5 text-xs text-[#64748b] disabled:opacity-50"
-        >
-          <X className="h-3 w-3" /> Cancel
-        </button>
-        <button
-          onClick={saveClient}
-          disabled={isPending}
-          className="inline-flex h-10 items-center gap-2 rounded bg-[#f15a24] px-5 text-xs font-bold text-white shadow-[0_8px_18px_rgba(241,90,36,0.28)] disabled:opacity-60"
-        >
-          <Check className="h-3 w-3" />
-          {isPending ? "Saving…" : "Save Client"}
-        </button>
+      <div className="sticky top-0 z-10 flex h-[72px] items-center justify-between gap-3 border-b border-[#edf0f3] bg-white px-6">
+        <nav className="flex items-center gap-2 text-xs text-[#6b7280]">
+          <Link href="/dashboard/clients" className="text-primary hover:underline transition-colors">
+            Clients
+          </Link>
+          <span>/</span>
+          <span className="font-semibold text-[#111827]">Create Client</span>
+        </nav>
+        <div className="flex gap-3">
+          <button
+            onClick={cancel}
+            disabled={isPending}
+            className="inline-flex h-10 items-center gap-2 rounded border border-[#e5e7eb] px-5 text-xs text-[#64748b] disabled:opacity-50"
+          >
+            <X className="h-3 w-3" /> Cancel
+          </button>
+          <button
+            onClick={saveClient}
+            disabled={isPending}
+            className="inline-flex h-10 items-center gap-2 rounded bg-[#f15a24] px-5 text-xs font-bold text-white shadow-[0_8px_18px_rgba(241,90,36,0.28)] disabled:opacity-60"
+          >
+            <Check className="h-3 w-3" />
+            {isPending ? "Saving…" : "Save Client"}
+          </button>
+        </div>
       </div>
 
       <p className="mx-auto max-w-[680px] px-4 py-3 text-[11px] text-[#64748b]">

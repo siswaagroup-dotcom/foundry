@@ -36,6 +36,7 @@ export interface RelatedEntity {
 export interface BreadcrumbItem {
   id: string;
   label: string;
+  href?: string;
 }
 
 export interface SelectOption {

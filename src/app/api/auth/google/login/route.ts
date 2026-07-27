@@ -6,7 +6,9 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
+  // For the OAuth redirect URI, always use the actual request origin
+  // so localhost dev and production both work without env changes
+  const appUrl = req.nextUrl.origin;
 
   if (!clientId) {
     return NextResponse.json(

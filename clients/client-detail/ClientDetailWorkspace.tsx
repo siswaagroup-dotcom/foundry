@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -87,7 +88,13 @@ export function ClientDetailWorkspace({ onBack }: { onBack?: () => void }) {
       {/* Header */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-[#64748b]">Clients <span className="mx-2">›</span> {client.name}</p>
+          <p className="text-xs text-[#64748b]">
+            <Link href="/dashboard/clients" className="text-primary hover:underline transition-colors">
+              Clients
+            </Link>
+            <span className="mx-2">›</span>
+            {client.name}
+          </p>
           <h1 className="mt-2 text-2xl font-bold">{client.name}</h1>
         </div>
         <div className="flex gap-2">

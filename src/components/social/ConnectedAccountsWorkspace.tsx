@@ -8,6 +8,8 @@ import {
   Trash2,
   Twitter,
   Youtube,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -113,6 +115,17 @@ export function ConnectedAccountsWorkspace() {
   const [method, setMethod] = useState<"oauth" | "manual">("oauth");
   const [connectionName, setConnectionName] = useState("");
   const [credentials, setCredentials] = useState<Record<string, string>>({});
+  const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());
+  const [loadingCredentials, setLoadingCredentials] = useState(false);
+
+  function toggleFieldVisibility(key: string) {
+    setVisibleFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   const integrationsByPlatform = useMemo(() => {
     const map = new Map<SocialPlatform, SocialIntegration>();
@@ -130,11 +143,32 @@ export function ConnectedAccountsWorkspace() {
     return map;
   }, [dashboard.data?.accounts]);
 
-  function openModal(platform: PlatformConfig, integration?: SocialIntegration) {
+  async function openModal(platform: PlatformConfig, integration?: SocialIntegration) {
     setSelected(platform);
-    setMethod("oauth");
+    setMethod(integration?.connectionType === "manual" ? "manual" : "oauth");
     setConnectionName(integration?.connectionName ?? integration?.displayName ?? platform.label);
-    setCredentials({ redirectUri });
+    setVisibleFields(new Set());
+
+    if (integration?.id) {
+      // Fetch real decrypted credentials from server
+      setLoadingCredentials(true);
+      setCredentials({ redirectUri });
+      try {
+        const res = await fetch(`/api/social/integrations/${integration.id}/credentials`, {
+          headers: {
+            Authorization: `Bearer ${typeof window !== "undefined" ? (localStorage.getItem("foundry_access_token") ?? "") : ""}`,
+          },
+        });
+        const json = await res.json() as { success: boolean; data?: Record<string, string> };
+        if (json.success && json.data) {
+          setCredentials({ ...json.data, redirectUri });
+        }
+      } finally {
+        setLoadingCredentials(false);
+      }
+    } else {
+      setCredentials({ redirectUri });
+    }
   }
 
   function startOAuth() {
@@ -144,6 +178,12 @@ export function ConnectedAccountsWorkspace() {
 
 async function saveManual() {
   if (!selected) return;
+
+  const cleanCredentials: Record<string, string> = {};
+  for (const [key, value] of Object.entries(credentials)) {
+    if (key === "redirectUri") continue;
+    if (value.trim()) cleanCredentials[key] = value.trim();
+  }
 
   const input: SaveSocialIntegrationInput = {
     platform: selected.id,
@@ -155,72 +195,69 @@ async function saveManual() {
     handle: connectionName || selected.label,
 
     credentials: {
-      ...credentials,
+      ...cleanCredentials,
 
       appId:
-        credentials.appId ??
-        credentials.facebookAppId ??
-        credentials.clientId ??
+        cleanCredentials.appId ??
+        cleanCredentials.facebookAppId ??
+        cleanCredentials.clientId ??
         "",
 
       appSecret:
-        credentials.appSecret ??
-        credentials.facebookAppSecret ??
-        credentials.clientSecret ??
+        cleanCredentials.appSecret ??
+        cleanCredentials.facebookAppSecret ??
+        cleanCredentials.clientSecret ??
         "",
 
       pageId:
-        credentials.pageId ??
-        credentials.facebookPageId ??
+        cleanCredentials.pageId ??
+        cleanCredentials.facebookPageId ??
         "",
 
       pageAccessToken:
-        credentials.pageAccessToken ??
-        credentials.accessToken ??
-        credentials.access_token ??
-        credentials.token ??
+        cleanCredentials.pageAccessToken ??
+        cleanCredentials.accessToken ??
+        cleanCredentials.access_token ??
+        cleanCredentials.token ??
         "",
 
       graphVersion:
-        credentials.graphVersion ??
-        credentials.graphApiVersion ??
+        cleanCredentials.graphVersion ??
+        cleanCredentials.graphApiVersion ??
         "v19.0",
 
       businessId:
-        credentials.businessId ??
+        cleanCredentials.businessId ??
         "",
 
       organizationId:
-        credentials.organizationId ??
+        cleanCredentials.organizationId ??
         "",
 
       channelId:
-        credentials.channelId ??
+        cleanCredentials.channelId ??
         "",
     },
 
     pageId:
-      credentials.pageId ??
-      credentials.facebookPageId,
+      cleanCredentials.pageId ??
+      cleanCredentials.facebookPageId,
 
     channelId:
-      credentials.channelId,
+      cleanCredentials.channelId,
 
     organizationId:
-      credentials.organizationId,
+      cleanCredentials.organizationId,
 
     externalAccountId:
-      credentials.pageId ??
-      credentials.facebookPageId ??
-      credentials.channelId ??
-      credentials.organizationId ??
-      credentials.instagramBusinessAccountId,
+      cleanCredentials.pageId ??
+      cleanCredentials.facebookPageId ??
+      cleanCredentials.channelId ??
+      cleanCredentials.organizationId ??
+      cleanCredentials.instagramBusinessAccountId,
   };
 
-  console.log("Saving Integration", input);
-
   await saveIntegration.mutateAsync(input);
-
   setSelected(null);
 }
 
@@ -332,21 +369,51 @@ async function saveManual() {
                   Connection Name
                   <Input className="mt-2" value={connectionName} onChange={(event) => setConnectionName(event.target.value)} />
                 </label>
-                {selected.fields.map((field) => (
-                  <label key={field.key} className="block text-sm font-bold text-[#334155]">
-                    {field.label}
-                    <Input
-                      className="mt-2"
-                      type={field.secret ? "password" : "text"}
-                      value={field.readonly ? redirectUri : credentials[field.key] ?? ""}
-                      readOnly={field.readonly}
-                      onChange={(event) => setCredentials((current) => ({ ...current, [field.key]: event.target.value }))}
-                    />
-                  </label>
-                ))}
+
+                {loadingCredentials ? (
+                  <div className="flex items-center justify-center py-8 text-sm text-[#6b7280]">
+                    Loading credentials...
+                  </div>
+                ) : (
+                  selected.fields.map((field) => {
+                    const isVisible = visibleFields.has(field.key);
+                    const rawValue = field.readonly ? redirectUri : (credentials[field.key] ?? "");
+
+                    return (
+                      <label key={field.key} className="block text-sm font-bold text-[#334155]">
+                        <span className="mb-2 block">{field.label}</span>
+                        <div className="relative">
+                          <Input
+                            className="pr-10 font-mono text-sm"
+                            type={isVisible ? "text" : "password"}
+                            value={rawValue}
+                            readOnly={field.readonly}
+                            onChange={(event) =>
+                              !field.readonly &&
+                              setCredentials((current) => ({ ...current, [field.key]: event.target.value }))
+                            }
+                          />
+                          {!field.readonly && (
+                            <button
+                              type="button"
+                              onClick={() => toggleFieldVisibility(field.key)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#374151] transition-colors"
+                              aria-label={isVisible ? "Hide" : "Show"}
+                            >
+                              {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })
+                )}
+
                 <div className="flex flex-wrap justify-end gap-2 pt-2">
                   <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
-                  <Button onClick={saveManual} disabled={saveIntegration.isPending}>Save</Button>
+                  <Button onClick={saveManual} disabled={saveIntegration.isPending || loadingCredentials}>
+                    {saveIntegration.isPending ? "Saving..." : "Save"}
+                  </Button>
                 </div>
               </div>
             )}

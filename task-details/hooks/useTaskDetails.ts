@@ -37,7 +37,7 @@ export function useTaskDetails() {
 
   // ── Breadcrumbs ─────────────────────────────────────────────────────────────
   const breadcrumbs: BreadcrumbItem[] = [
-    { id: "tasks", label: "Tasks" },
+    { id: "tasks", label: "Tasks", href: "/dashboard/tasks" },
     { id: "current", label: task?.title ?? "Loading…" },
   ];
 

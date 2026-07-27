@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AlertCircle, AlertTriangle, Check, Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,9 @@ export function CreateTaskWorkspace() {
     <div className="min-h-full bg-white">
       <header className="px-7 py-6">
         <nav className="mb-5 flex items-center gap-2 text-xs text-[#6b7280]">
-          <span>Tasks</span>
+          <Link href="/dashboard/tasks" className="text-primary hover:underline transition-colors">
+            Tasks
+          </Link>
           <span>&gt;</span>
           <span className="font-semibold text-[#111827]">Create Task</span>
         </nav>

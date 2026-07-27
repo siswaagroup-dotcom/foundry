@@ -439,6 +439,48 @@ function CrmSettings({
   );
 }
 
+type IntegrationId = "resend" | "openai" | "github";
+
+type IntegrationItem = {
+  id: IntegrationId;
+  label: string;
+  description: string;
+  credentialsKey: "resendCredentials" | "openaiCredentials" | "githubCredentials";
+  fieldLabel: string;
+  emptyPlaceholder: string;
+  existsPlaceholder: string;
+};
+
+const INTEGRATION_ITEMS: IntegrationItem[] = [
+  {
+    id: "resend",
+    label: "Resend",
+    description: "Transactional email delivery for invitations and notifications.",
+    credentialsKey: "resendCredentials",
+    fieldLabel: "API Key",
+    emptyPlaceholder: "re_xxxxxxxxxxxxxxxxxxxxxxxx",
+    existsPlaceholder: "Enter new key to replace existing",
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    description: "AI-powered features across the workspace.",
+    credentialsKey: "openaiCredentials",
+    fieldLabel: "API Key",
+    emptyPlaceholder: "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+    existsPlaceholder: "Enter new key to replace existing",
+  },
+  {
+    id: "github",
+    label: "GitHub",
+    description: "Link pull requests and issues to tasks and projects.",
+    credentialsKey: "githubCredentials",
+    fieldLabel: "Personal Access Token",
+    emptyPlaceholder: "ghp_xxxxxxxxxxxxxxxxxxxx",
+    existsPlaceholder: "Enter new token to replace existing",
+  },
+];
+
 function IntegrationSettings({
   integrations,
   onChange,
@@ -450,33 +492,81 @@ function IntegrationSettings({
   onSave: () => void;
   saving: boolean;
 }) {
-  const items: { id: keyof SettingsData["integrations"]; label: string }[] = [
-    { id: "resend", label: "Resend" },
-    { id: "openai", label: "OpenAI" },
-    { id: "github", label: "GitHub" },
-  ];
+  const [expanded, setExpanded] = useState<IntegrationId | null>(null);
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-3">
-        {items.map((item) => {
+      <div className="divide-y divide-[#edf0f3] rounded-xl border border-[#edf0f3] bg-white overflow-hidden">
+        {INTEGRATION_ITEMS.map((item) => {
           const connected = integrations[item.id];
-          const Icon = connected ? CheckCircle2 : Circle;
+          const credentials = integrations[item.credentialsKey] ?? {};
+          const hasExistingKey = Boolean(credentials.hasKey);
+          const currentInput = credentials.newApiKey ?? "";
+          const isExpanded = expanded === item.id;
+          const ConnectedIcon = connected ? CheckCircle2 : Circle;
+
           return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onChange({ ...integrations, [item.id]: !connected })}
-              className="flex items-center justify-between rounded-xl border border-[#edf0f3] p-4 text-left transition-colors hover:bg-[#f8fafc]"
-            >
-              <span>
-                <span className="block text-sm font-semibold text-[#111827]">{item.label}</span>
-                <span className="mt-1 block text-xs text-[#6b7280]">
+            <div key={item.id}>
+              <div className="flex items-center gap-4 p-4">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...integrations, [item.id]: !connected })}
+                  className="flex-shrink-0"
+                >
+                  <ConnectedIcon
+                    className={connected ? "h-5 w-5 text-emerald-600" : "h-5 w-5 text-[#9ca3af]"}
+                  />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-[#111827]">{item.label}</span>
+                  <span className="mt-0.5 block text-xs text-[#6b7280]">{item.description}</span>
+                </div>
+                <span
+                  className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    connected ? "bg-emerald-50 text-emerald-700" : "bg-[#f3f4f6] text-[#6b7280]"
+                  }`}
+                >
                   {connected ? "Connected" : "Disconnected"}
                 </span>
-              </span>
-              <Icon className={connected ? "h-5 w-5 text-emerald-600" : "h-5 w-5 text-[#9ca3af]"} />
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => (prev === item.id ? null : item.id))}
+                  className="flex-shrink-0 rounded-md p-1 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827] transition-colors text-xs font-medium"
+                >
+                  {isExpanded ? "▲" : "▼"}
+                </button>
+              </div>
+
+              {isExpanded && (
+                <div className="border-t border-[#edf0f3] bg-[#f9fafb] px-4 py-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#374151]">{item.fieldLabel}</span>
+                    {hasExistingKey && (
+                      <span className="text-xs text-emerald-600 font-medium">● Key saved</span>
+                    )}
+                  </div>
+                  <Input
+                    type="password"
+                    value={currentInput}
+                    onChange={(e) =>
+                      onChange({
+                        ...integrations,
+                        [item.credentialsKey]: { ...credentials, newApiKey: e.target.value },
+                      })
+                    }
+                    placeholder={hasExistingKey ? item.existsPlaceholder : item.emptyPlaceholder}
+                    className="h-9 font-mono text-sm"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  {hasExistingKey && (
+                    <p className="text-xs text-[#9ca3af]">
+                      A key is already saved. Leave blank to keep it, or type a new one to replace.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

@@ -2,11 +2,23 @@ import bcrypt from "bcryptjs";
 
 import { db } from "@/lib/db";
 import { getInvitations, getMembers } from "@/services/team.server";
-import type { CrmPipelineStage, SettingsData, SettingsPatch } from "../../settings/types/settings-types";
+import type {
+  CrmPipelineStage,
+  IntegrationCredentials,
+  IntegrationsPatch,
+  SettingsData,
+  SettingsPatch,
+} from "../../settings/types/settings-types";
 
 export type ServiceResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; status: number; code?: string };
+
+type IntegrationCredentialsMap = {
+  resend?: IntegrationCredentials;
+  openai?: IntegrationCredentials;
+  github?: IntegrationCredentials;
+};
 
 type SettingsRow = {
   workspace_name: string;
@@ -26,8 +38,31 @@ type SettingsRow = {
   integration_resend_connected: boolean;
   integration_openai_connected: boolean;
   integration_github_connected: boolean;
+  integration_credentials: IntegrationCredentialsMap | null;
   crm_pipeline_stages: CrmPipelineStage[];
 };
+
+// Runtime check: does the integration_credentials column exist?
+let credentialsColumnExists: boolean | null = null;
+
+async function hasCredentialsColumn(): Promise<boolean> {
+  if (credentialsColumnExists !== null) return credentialsColumnExists;
+  try {
+    const { rows } = await db.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_name = 'workspace_settings'
+           AND column_name = 'integration_credentials'
+       ) AS exists`
+    );
+    credentialsColumnExists = rows[0]?.exists ?? false;
+    return credentialsColumnExists;
+  } catch {
+    credentialsColumnExists = false;
+    return false;
+  }
+}
+
 
 function normalizeStages(stages: CrmPipelineStage[]): CrmPipelineStage[] {
   return stages
@@ -55,6 +90,11 @@ export async function getSettings(
   try {
     await ensureWorkspaceSettings(workspaceId);
 
+    const withCredentials = await hasCredentialsColumn();
+    const credentialsSelect = withCredentials
+      ? ",\n           ws.integration_credentials"
+      : "";
+
     const [settingsResult, membersResult, invitationsResult] = await Promise.all([
       db.query<SettingsRow>(
         `SELECT
@@ -75,7 +115,7 @@ export async function getSettings(
            ws.integration_resend_connected,
            ws.integration_openai_connected,
            ws.integration_github_connected,
-           ws.crm_pipeline_stages
+           ws.crm_pipeline_stages${credentialsSelect}
          FROM workspaces w
          JOIN users u ON u.id = $2 AND u.deleted_at IS NULL
          JOIN workspace_settings ws ON ws.workspace_id = w.id
@@ -93,6 +133,8 @@ export async function getSettings(
     }
     if (!membersResult.success) return membersResult;
     if (!invitationsResult.success) return invitationsResult;
+
+    const credentials: IntegrationCredentialsMap = row.integration_credentials ?? {};
 
     return {
       success: true,
@@ -127,8 +169,11 @@ export async function getSettings(
         },
         integrations: {
           resend: row.integration_resend_connected,
+          resendCredentials: { hasKey: Boolean(credentials.resend?.apiKey) },
           openai: row.integration_openai_connected,
+          openaiCredentials: { hasKey: Boolean(credentials.openai?.apiKey) },
           github: row.integration_github_connected,
+          githubCredentials: { hasKey: Boolean(credentials.github?.apiKey) },
         },
       },
     };
@@ -265,6 +310,9 @@ export async function updateSettings(
     }
 
     if (patch.integrations) {
+      const intPatch = patch.integrations as IntegrationsPatch;
+
+      // Update boolean connected flags
       await client.query(
         `UPDATE workspace_settings
          SET integration_resend_connected = COALESCE($1, integration_resend_connected),
@@ -273,12 +321,54 @@ export async function updateSettings(
              updated_at = NOW()
          WHERE workspace_id = $4`,
         [
-          patch.integrations.resend,
-          patch.integrations.openai,
-          patch.integrations.github,
+          intPatch.resend,
+          intPatch.openai,
+          intPatch.github,
           workspaceId,
         ]
       );
+
+      // Update credentials if column exists
+      const credColExists = await hasCredentialsColumn();
+      if (credColExists) {
+        const hasCredentialUpdates =
+          Boolean(intPatch.resendCredentials?.newApiKey?.trim()) ||
+          Boolean(intPatch.openaiCredentials?.newApiKey?.trim()) ||
+          Boolean(intPatch.githubCredentials?.newApiKey?.trim());
+
+        if (hasCredentialUpdates) {
+          // Fetch current credentials first
+          const { rows: credRows } = await client.query<{
+            integration_credentials: IntegrationCredentialsMap | null;
+          }>(
+            "SELECT integration_credentials FROM workspace_settings WHERE workspace_id = $1",
+            [workspaceId]
+          );
+          const current: IntegrationCredentialsMap = credRows[0]?.integration_credentials ?? {};
+
+          const next: IntegrationCredentialsMap = { ...current };
+
+          const resendKey = intPatch.resendCredentials?.newApiKey?.trim();
+          if (resendKey) {
+            next.resend = { ...(next.resend ?? {}), apiKey: resendKey };
+          }
+
+          const openaiKey = intPatch.openaiCredentials?.newApiKey?.trim();
+          if (openaiKey) {
+            next.openai = { ...(next.openai ?? {}), apiKey: openaiKey };
+          }
+
+          const githubKey = intPatch.githubCredentials?.newApiKey?.trim();
+          if (githubKey) {
+            next.github = { ...(next.github ?? {}), apiKey: githubKey };
+          }
+
+          await client.query(
+            "UPDATE workspace_settings SET integration_credentials = $1::jsonb WHERE workspace_id = $2",
+            [JSON.stringify(next), workspaceId]
+          );
+        }
+      }
     }
 
     await client.query("COMMIT");

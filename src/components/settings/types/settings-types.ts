@@ -7,6 +7,13 @@ export type SettingsTab =
   | "integrations"
   | "billing";
 
+export type IntegrationCredentials = {
+  /** true when a key is stored in the DB — the actual key is never sent to the client */
+  hasKey?: boolean;
+  /** only populated by the client when the user types a new key to replace the existing one */
+  newApiKey?: string;
+};
+
 export type WorkspaceSetting = {
   id: string;
   label: string;
@@ -68,8 +75,11 @@ export type SettingsData = {
   };
   integrations: {
     resend: boolean;
+    resendCredentials: IntegrationCredentials;
     openai: boolean;
+    openaiCredentials: IntegrationCredentials;
     github: boolean;
+    githubCredentials: IntegrationCredentials;
   };
   team: {
     members: {

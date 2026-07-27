@@ -11,6 +11,13 @@ export type SettingsTab =
 
 export type SettingFieldType = "text" | "email" | "password" | "number" | "textarea";
 
+export type IntegrationCredentials = {
+  /** true when a key is stored in the DB — the actual key is never sent to the client */
+  hasKey?: boolean;
+  /** only populated by the client when the user types a new key to replace the existing one */
+  newApiKey?: string;
+};
+
 export interface WorkspaceSetting {
   id: string;
   label: string;
@@ -58,10 +65,22 @@ export interface SettingsData {
   };
   integrations: {
     resend: boolean;
+    resendCredentials: IntegrationCredentials;
     openai: boolean;
+    openaiCredentials: IntegrationCredentials;
     github: boolean;
+    githubCredentials: IntegrationCredentials;
   };
 }
+
+export type IntegrationsPatch = {
+  resend?: boolean;
+  resendCredentials?: Pick<IntegrationCredentials, "newApiKey">;
+  openai?: boolean;
+  openaiCredentials?: Pick<IntegrationCredentials, "newApiKey">;
+  github?: boolean;
+  githubCredentials?: Pick<IntegrationCredentials, "newApiKey">;
+};
 
 export type SettingsPatch = Partial<{
   workspace: Partial<SettingsData["workspace"]>;
@@ -74,7 +93,7 @@ export type SettingsPatch = Partial<{
   crm: {
     stages: CrmPipelineStage[];
   };
-  integrations: Partial<SettingsData["integrations"]>;
+  integrations: IntegrationsPatch;
 }>;
 
 export interface InviteMemberInput {

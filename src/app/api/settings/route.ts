@@ -61,8 +61,11 @@ const patchSchema = z.object({
   integrations: z
     .object({
       resend: z.boolean().optional(),
+      resendCredentials: z.object({ newApiKey: z.string().optional() }).optional(),
       openai: z.boolean().optional(),
+      openaiCredentials: z.object({ newApiKey: z.string().optional() }).optional(),
       github: z.boolean().optional(),
+      githubCredentials: z.object({ newApiKey: z.string().optional() }).optional(),
     })
     .partial()
     .optional(),

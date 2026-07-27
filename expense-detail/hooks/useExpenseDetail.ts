@@ -27,7 +27,7 @@ export function useExpenseDetail() {
   const [attachmentMimeType, setAttachmentMimeType] = useState("");
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { id: "expenses", label: "Expenses" },
+    { id: "expenses", label: "Expenses", href: "/dashboard/expenses" },
     { id: "detail", label: expense?.name ?? "Expense Detail" },
   ];
 

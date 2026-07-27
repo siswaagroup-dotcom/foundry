@@ -24,7 +24,25 @@ function mergeSettings(current: SettingsData, patch: SettingsPatch): SettingsDat
     profile: { ...current.profile, ...patch.profile },
     expensePolicies: { ...current.expensePolicies, ...patch.expensePolicies },
     crm: patch.crm ? { ...current.crm, ...patch.crm } : current.crm,
-    integrations: { ...current.integrations, ...patch.integrations },
+    integrations: patch.integrations
+      ? {
+          resend: patch.integrations.resend ?? current.integrations.resend,
+          resendCredentials: {
+            hasKey: current.integrations.resendCredentials?.hasKey,
+            newApiKey: patch.integrations.resendCredentials?.newApiKey,
+          },
+          openai: patch.integrations.openai ?? current.integrations.openai,
+          openaiCredentials: {
+            hasKey: current.integrations.openaiCredentials?.hasKey,
+            newApiKey: patch.integrations.openaiCredentials?.newApiKey,
+          },
+          github: patch.integrations.github ?? current.integrations.github,
+          githubCredentials: {
+            hasKey: current.integrations.githubCredentials?.hasKey,
+            newApiKey: patch.integrations.githubCredentials?.newApiKey,
+          },
+        }
+      : current.integrations,
   };
 }
 

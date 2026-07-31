@@ -6,8 +6,8 @@
     "dev": "next dev",
     "migrate": "node scripts/db-runner.cjs migrate",
     "seed": "node scripts/db-runner.cjs seed",
-    "build": "next build",
-    "start": "next start -p ${PORT:-3000}",
+    "build": "next build && node scripts/copy-standalone.cjs",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint"
   },
   "dependencies": {

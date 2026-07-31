@@ -34,6 +34,15 @@ export type ServiceResult<T> =
 export async function getMembers(
   workspaceId: string,
 ): Promise<ServiceResult<WorkspaceMemberRow[]>> {
+  const sql = `SELECT wm.id, wm.workspace_id, wm.user_id, u.name, u.email,
+              r.name AS role_name, wm.status, wm.joined_at, wm.created_at
+       FROM workspace_members wm
+       JOIN users u ON u.id = wm.user_id
+       JOIN roles r ON r.id = wm.role_id
+       WHERE wm.workspace_id = $1
+         AND wm.status = 'active'
+         AND u.deleted_at IS NULL
+       ORDER BY wm.joined_at ASC NULLS LAST, wm.created_at ASC`;
   try {
     const { rows } = await db.query<{
       id: string;
@@ -45,18 +54,7 @@ export async function getMembers(
       status: string;
       joined_at: string | null;
       created_at: string;
-    }>(
-      `SELECT wm.id, wm.workspace_id, wm.user_id, u.name, u.email,
-              r.name AS role_name, wm.status, wm.joined_at, wm.created_at
-       FROM workspace_members wm
-       JOIN users u ON u.id = wm.user_id
-       JOIN roles r ON r.id = wm.role_id
-       WHERE wm.workspace_id = $1
-         AND wm.status = 'active'
-         AND u.deleted_at IS NULL
-       ORDER BY wm.joined_at ASC NULLS LAST, wm.created_at ASC`,
-      [workspaceId],
-    );
+    }>(sql, [workspaceId]);
     return {
       success: true,
       data: rows.map((r) => ({
@@ -72,7 +70,13 @@ export async function getMembers(
       })),
     };
   } catch (err) {
-    console.error("[team.getMembers]", err);
+    const e = err as { message?: string; code?: string; detail?: string; hint?: string };
+    console.error("[team.getMembers] QUERY FAILED workspaceId=%s", workspaceId);
+    console.error("  SQL:", sql.replace(/\s+/g, " ").trim());
+    console.error("  error.message:", e?.message);
+    console.error("  error.code:", e?.code);
+    console.error("  error.detail:", e?.detail);
+    console.error("  error.hint:", e?.hint);
     return { success: false, error: "Failed to fetch members", status: 500 };
   }
 }
@@ -82,6 +86,15 @@ export async function getMembers(
 export async function getInvitations(
   workspaceId: string,
 ): Promise<ServiceResult<WorkspaceInvitationRow[]>> {
+  const sql = `SELECT wi.id, wi.workspace_id, wi.email, r.name AS role_name,
+              wi.status, u.name AS invited_by_name, wi.created_at, wi.expires_at
+       FROM workspace_invitations wi
+       JOIN roles r ON r.id = wi.role_id
+       JOIN users u ON u.id = wi.invited_by
+       WHERE wi.workspace_id = $1
+         AND wi.status = 'pending'
+         AND wi.expires_at > NOW()
+       ORDER BY wi.created_at DESC`;
   try {
     const { rows } = await db.query<{
       id: string;
@@ -92,18 +105,7 @@ export async function getInvitations(
       invited_by_name: string;
       created_at: string;
       expires_at: string;
-    }>(
-      `SELECT wi.id, wi.workspace_id, wi.email, r.name AS role_name,
-              wi.status, u.name AS invited_by_name, wi.created_at, wi.expires_at
-       FROM workspace_invitations wi
-       JOIN roles r ON r.id = wi.role_id
-       JOIN users u ON u.id = wi.invited_by
-       WHERE wi.workspace_id = $1
-         AND wi.status = 'pending'
-         AND wi.expires_at > NOW()
-       ORDER BY wi.created_at DESC`,
-      [workspaceId],
-    );
+    }>(sql, [workspaceId]);
     return {
       success: true,
       data: rows.map((r) => ({
@@ -121,7 +123,13 @@ export async function getInvitations(
       })),
     };
   } catch (err) {
-    console.error("[team.getInvitations]", err);
+    const e = err as { message?: string; code?: string; detail?: string; hint?: string };
+    console.error("[team.getInvitations] QUERY FAILED workspaceId=%s", workspaceId);
+    console.error("  SQL:", sql.replace(/\s+/g, " ").trim());
+    console.error("  error.message:", e?.message);
+    console.error("  error.code:", e?.code);
+    console.error("  error.detail:", e?.detail);
+    console.error("  error.hint:", e?.hint);
     return {
       success: false,
       error: "Failed to fetch invitations",

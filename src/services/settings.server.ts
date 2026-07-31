@@ -92,16 +92,38 @@ export async function getSettings(
   userId: string
 ): Promise<ServiceResult<SettingsData>> {
   try {
-    await ensureWorkspaceSettings(workspaceId);
+    console.error("[settings.getSettings] START workspaceId=%s userId=%s", workspaceId, userId);
 
-    const withCredentials = await hasCredentialsColumn();
+    // Step 1: ensure workspace_settings row exists
+    try {
+      await ensureWorkspaceSettings(workspaceId);
+      console.error("[settings.getSettings] ensureWorkspaceSettings OK");
+    } catch (err: unknown) {
+      const e = err as { message?: string; code?: string; detail?: string; hint?: string };
+      console.error("[settings.getSettings] ensureWorkspaceSettings FAILED");
+      console.error("  error.message:", e?.message);
+      console.error("  error.code:", e?.code);
+      console.error("  error.detail:", e?.detail);
+      console.error("  error.hint:", e?.hint);
+      throw err;
+    }
+
+    // Step 2: check if integration_credentials column exists
+    let withCredentials = false;
+    try {
+      withCredentials = await hasCredentialsColumn();
+      console.error("[settings.getSettings] hasCredentialsColumn=%s", withCredentials);
+    } catch (err: unknown) {
+      const e = err as { message?: string; code?: string };
+      console.error("[settings.getSettings] hasCredentialsColumn FAILED message=%s code=%s", e?.message, e?.code);
+      withCredentials = false;
+    }
+
     const credentialsSelect = withCredentials
       ? ",\n           ws.integration_credentials"
       : "";
 
-    const [settingsResult, membersResult, invitationsResult] = await Promise.all([
-      db.query<SettingsRow>(
-        `SELECT
+    const mainQuery = `SELECT
            w.name AS workspace_name,
            w.logo_url,
            w.timezone,
@@ -124,19 +146,40 @@ export async function getSettings(
          JOIN users u ON u.id = $2 AND u.deleted_at IS NULL
          JOIN workspace_settings ws ON ws.workspace_id = w.id
          WHERE w.id = $1 AND w.deleted_at IS NULL
-         LIMIT 1`,
-        [workspaceId, userId]
-      ),
+         LIMIT 1`;
+
+    const [settingsResult, membersResult, invitationsResult] = await Promise.all([
+      db.query<SettingsRow>(mainQuery, [workspaceId, userId]).catch((err: unknown) => {
+        const e = err as { message?: string; code?: string; detail?: string; hint?: string; stack?: string };
+        console.error("[settings.getSettings] MAIN QUERY FAILED");
+        console.error("  SQL:", mainQuery.replace(/\s+/g, " ").trim());
+        console.error("  params: workspaceId=%s userId=%s", workspaceId, userId);
+        console.error("  error.message:", e?.message);
+        console.error("  error.code:", e?.code);
+        console.error("  error.detail:", e?.detail);
+        console.error("  error.hint:", e?.hint);
+        console.error("  stack:", e?.stack);
+        throw err;
+      }),
       getMembers(workspaceId),
       getInvitations(workspaceId),
     ]);
 
     const row = settingsResult.rows[0];
     if (!row) {
+      console.error("[settings.getSettings] NO ROW returned for workspaceId=%s userId=%s", workspaceId, userId);
       return { success: false, error: "Settings not found", status: 404, code: "SETTINGS_NOT_FOUND" };
     }
-    if (!membersResult.success) return membersResult;
-    if (!invitationsResult.success) return invitationsResult;
+    if (!membersResult.success) {
+      console.error("[settings.getSettings] getMembers FAILED:", membersResult.error);
+      return membersResult;
+    }
+    if (!invitationsResult.success) {
+      console.error("[settings.getSettings] getInvitations FAILED:", invitationsResult.error);
+      return invitationsResult;
+    }
+
+    console.error("[settings.getSettings] All queries OK, building response");
 
     const credentials: IntegrationCredentialsMap = row.integration_credentials ?? {};
 

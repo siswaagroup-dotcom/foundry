@@ -127,8 +127,6 @@ async function isWorkspaceOwnerOrAdmin(
   workspaceId: string,
   userId: string,
 ): Promise<boolean> {
-  console.log("workspaceId =", workspaceId);
-  console.log("userId =", userId);
 
   const { rows } = await db.query(
     `SELECT
@@ -143,8 +141,6 @@ async function isWorkspaceOwnerOrAdmin(
        AND wm.user_id = $2`,
     [workspaceId, userId],
   );
-
-  console.log(rows);
 
   return (
     rows[0]?.role_name?.toLowerCase() === "owner" ||
@@ -443,17 +439,6 @@ async function hydratePosts(rows: PostRow[]): Promise<SocialPost[]> {
       uploadedAt: row.uploaded_at,
     });
     media.set(row.post_id, list);
-  });
-  console.log("hydratePosts loaded media", {
-    postIds: ids,
-    mediaRows: mediaRows.rows.map((row) => ({
-      id: row.id,
-      postId: row.post_id,
-      fileUrl: row.file_url,
-      mimeType: row.mime_type,
-      fileSizeBytes: row.file_size_bytes,
-      sortOrder: row.sort_order,
-    })),
   });
 
   const logs = new Map<string, SocialPublishLog[]>();
@@ -1157,12 +1142,6 @@ async function replacePostMedia(
   postId: string,
   media: CreateSocialPostInput["media"] = [],
 ) {
-  console.log("replacePostMedia input", {
-    workspaceId,
-    postId,
-    mediaCount: media.length,
-    media,
-  });
   await client.query("DELETE FROM social_post_media WHERE post_id = $1", [
     postId,
   ]);
@@ -1188,11 +1167,6 @@ async function replacePostMedia(
      ORDER BY sort_order ASC`,
     [postId],
   );
-  console.log("replacePostMedia database verification", {
-    postId,
-    rowCount: inserted.rowCount,
-    rows: inserted.rows,
-  });
 }
 
 export async function createSocialPost(
@@ -1225,11 +1199,6 @@ export async function createSocialPost(
       ],
     );
     const postId = rows[0].id;
-    console.log("createSocialPost input media before replacePostMedia", {
-      postId,
-      media: input.media ?? [],
-      mediaCount: input.media?.length ?? 0,
-    });
     await replacePostAccounts(client, workspaceId, postId, input.accountIds);
     await replacePostMedia(client, workspaceId, postId, input.media);
 
@@ -1293,11 +1262,6 @@ export async function getSocialPost(
     const posts = await hydratePosts(await getPostRows(workspaceId, postId));
     if (!posts[0])
       return { success: false, error: "Social post not found", status: 404 };
-    console.log("getSocialPost hydrated media", {
-      postId,
-      mediaCount: posts[0].media.length,
-      media: posts[0].media,
-    });
     return { success: true, data: posts[0] };
   } catch (error) {
     console.error("[social.post]", error);
@@ -1344,11 +1308,6 @@ export async function updateSocialPost(
       await replacePostAccounts(client, workspaceId, postId, input.accountIds);
     }
     if (input.media) {
-      console.log("updateSocialPost input media before replacePostMedia", {
-        postId,
-        media: input.media,
-        mediaCount: input.media.length,
-      });
       await replacePostMedia(client, workspaceId, postId, input.media);
     }
     await logActivity(client, {
@@ -1588,15 +1547,6 @@ async function graphPost(
     () => controller.abort(),
     FACEBOOK_REQUEST_TIMEOUT_MS,
   );
-  console.log("Facebook URL", url);
-  console.log("Facebook API URL:", url);
-  console.log("Facebook Request", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: requestPayload,
-    timeout: FACEBOOK_REQUEST_TIMEOUT_MS,
-  });
-  console.log("Facebook Request Body", requestPayload);
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -1606,13 +1556,6 @@ async function graphPost(
     });
     const responsePayload = await parseProviderResponse(response);
     const durationMs = Date.now() - startedAt;
-    console.log("Facebook HTTP Status", response.status);
-    console.log("Facebook Response JSON", responsePayload);
-    console.log("Facebook Response", {
-      status: response.status,
-      body: responsePayload,
-      durationMs,
-    });
     return {
       url,
       requestPayload,
@@ -1640,25 +1583,10 @@ async function graphGet(url: string): Promise<ProviderRequestResult> {
     FACEBOOK_REQUEST_TIMEOUT_MS,
   );
   const safeUrl = url.replace(/access_token=[^&]+/, "access_token=******");
-  console.log("Facebook URL", safeUrl);
-  console.log("Facebook API URL:", safeUrl);
-  console.log("Facebook Request", {
-    method: "GET",
-    headers: {},
-    body: null,
-    timeout: FACEBOOK_REQUEST_TIMEOUT_MS,
-  });
   try {
     const response = await fetch(url, { signal: controller.signal });
     const responsePayload = await parseProviderResponse(response);
     const durationMs = Date.now() - startedAt;
-    console.log("Facebook HTTP Status", response.status);
-    console.log("Facebook Response JSON", responsePayload);
-    console.log("Facebook Response", {
-      status: response.status,
-      body: responsePayload,
-      durationMs,
-    });
     return {
       url: safeUrl,
       requestPayload: null,
@@ -1737,11 +1665,6 @@ async function publishToProvider(
   context: PublishProviderContext = {},
 ): Promise<PublishProviderResult> {
 
-  console.log("========== PUBLISH PROVIDER ==========");
-  console.log("Platform:", platform);
-  console.log("Credentials:", maskCredentials(credentials));
-  console.log("======================================");
-
   const accessToken = firstCredential(credentials, PROVIDER_ACCESS_TOKEN_KEYS);
 
   if (!accessToken) {
@@ -1751,7 +1674,6 @@ async function publishToProvider(
   }
 
   if (platform === "facebook") {
-    console.log("Publishing to Facebook...");
 
     const pageId =
       firstCredential(credentials, [
@@ -1762,9 +1684,6 @@ async function publishToProvider(
       ]) ??
       context.integrationPageId ??
       context.accountPlatformUserId;
-
-    console.log("Resolved Page ID:", pageId);
-    console.log("Access Token Found:", !!accessToken);
 
     if (!pageId) {
       return providerFailure("Facebook Page ID is required.");
@@ -1786,16 +1705,6 @@ async function publishToProvider(
     const isVideo = media?.mimeType.startsWith("video/");
 
     const edge = isVideo ? "videos" : isPhoto ? "photos" : "feed";
-    console.log("Facebook media publish selection", {
-      pageId,
-      edge,
-      media,
-      fileUrl: media?.fileUrl ?? null,
-      mimeType: media?.mimeType ?? null,
-      isPhoto,
-      isVideo,
-      isHttps: media?.fileUrl ? media.fileUrl.startsWith("https://") : null,
-    });
 
     if (media) {
       const mediaUrlError = validatePublicMediaUrl(media.fileUrl);
@@ -2039,7 +1948,6 @@ export async function publishSocialPost(
   userId: string,
   postId: string,
 ): Promise<ServiceResult<SocialPost>> {
-  console.log("publishSocialPost started", { workspaceId, userId, postId });
   const post = await getSocialPost(workspaceId, postId);
   if (!post.success) {
     console.error("publishSocialPost post lookup failed", post);
@@ -2054,11 +1962,6 @@ export async function publishSocialPost(
       code: "NO_PUBLISH_TARGETS",
     };
   }
-  console.log("publishSocialPost loaded post media", {
-    postId,
-    mediaCount: post.data.media.length,
-    media: post.data.media,
-  });
 
   const client = await db.connect();
   const publishStartedAt = new Date();
@@ -2136,27 +2039,6 @@ export async function publishSocialPost(
         connectedRow?.platform_user_id ??
         null;
 
-      console.log("Publishing platform:", account.platform);
-      console.log("Connected account:", {
-        id: account.socialAccountId,
-        platform: account.platform,
-        accountName: account.accountName,
-        status: connectedRow?.status ?? null,
-        integrationId: connectedRow?.integration_id ?? null,
-        integrationExists: Boolean(connectedRow?.integration_id),
-        credentialsEncryptedPresent: Boolean(
-          connectedRow?.credentials_encrypted,
-        ),
-        accountAccessTokenPresent: Boolean(accountAccessToken),
-        credentialsDecrypted: Boolean(credentials),
-      });
-      console.log("Page ID:", pageId);
-      console.log(
-        "Graph Version:",
-        account.platform === "facebook" ? FACEBOOK_GRAPH_VERSION : null,
-      );
-      console.log("Token present:", Boolean(accessToken));
-
       let providerResult: PublishProviderResult;
       if (!connectedRow) {
         providerResult = providerFailure(
@@ -2189,13 +2071,6 @@ export async function publishSocialPost(
           "Missing access token or bearer token for this integration.",
         );
       } else {
-        console.log("publishSocialPost media before publishToProvider", {
-          postId,
-          accountId: account.socialAccountId,
-          platform: account.platform,
-          mediaCount: post.data.media.length,
-          media: post.data.media,
-        });
         providerResult = await publishToProvider(
           account.platform,
           providerCredentials,
@@ -2359,20 +2234,7 @@ export async function publishSocialPost(
        ORDER BY created_at DESC`,
       [postId, publishStartedAt],
     );
-    console.log("Publish database verification", {
-      social_posts: postVerification.rows,
-      social_post_accounts: accountVerification.rows,
-      social_publish_logs_inserted_this_attempt: logVerification.rowCount,
-      social_publish_logs: logVerification.rows,
-    });
     const refreshedPost = await getSocialPost(workspaceId, postId);
-    console.log("publishSocialPost completed", {
-      postId,
-      successCount,
-      failedCount,
-      finalStatus,
-      refreshedPost,
-    });
     if (failedCount > 0 && successCount === 0) {
       return {
         success: false,

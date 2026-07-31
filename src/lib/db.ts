@@ -13,12 +13,24 @@ function createPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set.");
   }
+
+  // SSL is required on Railway and any cloud PostgreSQL provider.
+  // Enable automatically in production or when DATABASE_SSL=true.
+  // rejectUnauthorized:false is safe here because Railway uses self-signed certs.
+  const isProduction = process.env.NODE_ENV === "production";
+  const sslExplicit = process.env.DATABASE_SSL;
+
+  let ssl: boolean | { rejectUnauthorized: boolean } = false;
+  if (sslExplicit === "true" || (isProduction && sslExplicit !== "false")) {
+    ssl = { rejectUnauthorized: false };
+  }
+
   return new Pool({
     connectionString,
     max: 10,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-    ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10_000,
+    ssl,
   });
 }
 

@@ -8,25 +8,17 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    console.log("Incoming publish request");
     const auth = await requireAuth(req);
-    if (!auth.ok) {
-      console.error("Publish auth failed");
-      return auth.response;
-    }
-    const { id } = await params;
-    console.log("workspaceId", auth.ctx.workspaceId);
-    console.log("userId", auth.ctx.userId);
-    console.log("postId", id);
+    if (!auth.ok) return auth.response;
 
+    const { id } = await params;
     const result = await publishSocialPost(auth.ctx.workspaceId, auth.ctx.userId, id);
-    console.log("publishSocialPost response", result);
     if (!result.success) return apiError(result.error, result.status, result.code);
     return apiSuccess(result.data);
   } catch (error) {
-    console.error("Unhandled publish route error", error);
+    console.error("[api.social.posts.publish]", error);
     return apiError(
-      error instanceof Error ? error.message : "Unhandled publish route error",
+      error instanceof Error ? error.message : "Failed to publish post",
       500,
       "PUBLISH_ROUTE_ERROR"
     );

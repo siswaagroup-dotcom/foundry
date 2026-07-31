@@ -52,18 +52,12 @@ export const fetchSocialPost = (id: string): Promise<SocialPost> =>
   apiGet(`${BASE}/posts/${id}`);
 
 export const createSocialPost = (input: CreateSocialPostInput): Promise<SocialPost> => {
-  console.log("createSocialPost API payload", input);
   return apiPost(`${BASE}/posts`, input);
 };
 
 export const uploadSocialMediaFile = (file: File): Promise<SocialMediaAsset> => {
   const body = new FormData();
   body.append("file", file);
-  console.log("Uploading social media file", {
-    name: file.name,
-    type: file.type,
-    size: file.size,
-  });
   return apiPostForm(`${BASE}/media/upload`, body);
 };
 
@@ -79,13 +73,10 @@ export const duplicateSocialPost = (id: string): Promise<SocialPost> =>
   apiPost(`${BASE}/posts/${id}/duplicate`, {});
 
 export const publishSocialPost = async (id: string): Promise<SocialPost> => {
-  console.log("Publishing post", id);
   try {
-    const response = await apiPost<SocialPost>(`${BASE}/posts/${id}/publish`, {});
-    console.log("Publish response", response);
-    return response;
+    return await apiPost<SocialPost>(`${BASE}/posts/${id}/publish`, {});
   } catch (error) {
-    console.error("Publish error", error);
+    console.error("[social.service.publish]", error);
     throw error;
   }
 };

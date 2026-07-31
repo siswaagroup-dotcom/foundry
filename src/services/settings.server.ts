@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { getInvitations, getMembers } from "@/services/team.server";
 import type {
   CrmPipelineStage,
-  IntegrationCredentials,
   IntegrationsPatch,
   SettingsData,
   SettingsPatch,
@@ -14,10 +13,15 @@ export type ServiceResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; status: number; code?: string };
 
+// Internal DB shape — stores the actual API key, never sent to the client
+type StoredCredential = {
+  apiKey?: string;
+};
+
 type IntegrationCredentialsMap = {
-  resend?: IntegrationCredentials;
-  openai?: IntegrationCredentials;
-  github?: IntegrationCredentials;
+  resend?: StoredCredential;
+  openai?: StoredCredential;
+  github?: StoredCredential;
 };
 
 type SettingsRow = {

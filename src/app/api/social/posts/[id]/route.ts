@@ -41,21 +41,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!auth.ok) return auth.response;
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  console.log("Update social post route body", { id, body });
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    console.error("Update social post validation failed", {
-      id,
-      issues: parsed.error.errors,
-      body,
-    });
     return apiError(parsed.error.errors[0]?.message ?? "Validation failed", 400, "VALIDATION_ERROR");
   }
-  console.log("Update social post parsed media", {
-    id,
-    media: parsed.data.media ?? [],
-    mediaCount: parsed.data.media?.length ?? 0,
-  });
   const result = await updateSocialPost(auth.ctx.workspaceId, auth.ctx.userId, id, parsed.data);
   if (!result.success) return apiError(result.error, result.status, result.code);
   return apiSuccess(result.data);

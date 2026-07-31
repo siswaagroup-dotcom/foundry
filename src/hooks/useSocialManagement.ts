@@ -118,14 +118,10 @@ export function useSocialPostAction(
 
   return useMutation({
     mutationFn: (id: string) => mutationFn(id),
-    onSuccess: (data, id) => {
-      console.log(`Social ${action} mutation success`, { id, data });
-    },
     onError: (error, id) => {
-      console.error(`Social ${action} mutation error`, { id, error });
+      console.error(`[social.${action}]`, { id, error });
     },
     onSettled: () => {
-      console.log(`Social ${action} mutation settled; invalidating social queries`);
       invalidate();
     },
   });

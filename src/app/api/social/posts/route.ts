@@ -37,19 +37,10 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuth(req);
   if (!auth.ok) return auth.response;
   const body = await req.json().catch(() => ({}));
-  console.log("Create social post route body", body);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    console.error("Create social post validation failed", {
-      issues: parsed.error.errors,
-      body,
-    });
     return apiError(parsed.error.errors[0]?.message ?? "Validation failed", 400, "VALIDATION_ERROR");
   }
-  console.log("Create social post parsed media", {
-    media: parsed.data.media ?? [],
-    mediaCount: parsed.data.media?.length ?? 0,
-  });
   const result = await createSocialPost(auth.ctx.workspaceId, auth.ctx.userId, parsed.data);
   if (!result.success) return apiError(result.error, result.status, result.code);
   return apiSuccess(result.data, 201);

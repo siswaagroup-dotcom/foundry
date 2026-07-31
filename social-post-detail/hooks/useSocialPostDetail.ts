@@ -137,23 +137,16 @@ export function useSocialPostDetail() {
   }, [caption, postId, updatePost]);
 
   const publishNow = useCallback(async () => {
-    console.log("Publish button clicked");
     if (publishPost.isPending || query.data?.status === "published") {
-      console.log("Publish ignored", {
-        isPending: publishPost.isPending,
-        status: query.data?.status,
-      });
       return;
     }
 
     try {
-      console.log("Publishing post", postId);
       const publishedPost = (await publishPost.mutateAsync(postId)) as SocialPost;
-      console.log("Publish response", publishedPost);
       toast(publishToastFor(publishedPost));
       await query.refetch();
     } catch (error) {
-      console.error("Publish error", error);
+      console.error("[useSocialPostDetail.publishNow]", error);
       toast({
         title: "❌ Failed to publish",
         description: error instanceof Error ? error.message : "Facebook API rejected the request.",

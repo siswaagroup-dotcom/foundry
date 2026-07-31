@@ -64,11 +64,6 @@ export async function POST(req: NextRequest) {
 
     await unlink(tempPath).catch(() => undefined);
 
-    console.log("Cloudinary Upload Success", {
-      secure_url: upload.secure_url,
-      public_id: upload.public_id,
-    });
-
     const result = await createSocialMedia(
       auth.ctx.workspaceId,
       auth.ctx.userId,
@@ -88,9 +83,7 @@ export async function POST(req: NextRequest) {
     return apiSuccess(result.data, 201);
   } catch (err) {
     await unlink(tempPath).catch(() => undefined);
-
-    console.error("Cloudinary Upload Failed", err);
-
+    console.error("[api.social.media.upload]", err);
     return apiError("Failed to upload media.", 500);
   }
 }

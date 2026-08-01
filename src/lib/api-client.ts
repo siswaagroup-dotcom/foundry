@@ -9,11 +9,27 @@ type ApiEnvelope<T> =
   | { success: false; error?: { message?: string; code?: string } };
 
 async function parseResponse<T>(response: Response): Promise<T> {
+  // If 401, tokens are invalid — clear and redirect to login immediately.
+  // This stops React Query from retrying endlessly.
+  if (response.status === 401) {
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
+      clearTokens();
+      window.location.href = "/auth";
+    }
+    throw new Error("Unauthorized");
+  }
   const json = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!json?.success) {
     throw new Error(json?.error?.message ?? `Request failed: ${response.status}`);
   }
   return json.data;
+}
+
+function clearTokens() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("foundry_access_token");
+  localStorage.removeItem("foundry_refresh_token");
+  document.cookie = "foundry_access_token=; path=/; max-age=0; SameSite=Strict";
 }
 
 function authHeaders(): HeadersInit {

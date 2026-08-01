@@ -129,6 +129,12 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
     const refreshed = await refreshTokens();
 
     if (!refreshed) {
+      // Both access and refresh tokens are invalid/expired.
+      // Clear everything and redirect to login — do not loop.
+      clearTokens();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
+        window.location.href = "/auth";
+      }
       return null;
     }
 

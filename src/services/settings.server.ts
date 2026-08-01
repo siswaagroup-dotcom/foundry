@@ -46,6 +46,60 @@ type SettingsRow = {
   crm_pipeline_stages: CrmPipelineStage[];
 };
 
+// ── Runtime schema guard ─────────────────────────────────────────────────────
+// V018__settings_dynamic.sql and V019__integration_credentials.sql were never
+// applied on Railway because db-runner.cjs tracks by version prefix only
+// (V018, V019) and the FIRST file with each prefix wins. The second file with
+// the same prefix is silently skipped.
+//
+// These ADD COLUMN IF NOT EXISTS statements are idempotent — safe to run on
+// every cold start. They are no-ops if the columns already exist.
+let settingsSchemaEnsured = false;
+
+async function ensureSettingsSchema(): Promise<void> {
+  if (settingsSchemaEnsured) return;
+  try {
+    await db.query(`
+      -- V018__settings_dynamic.sql (skipped by db-runner due to duplicate V018 prefix)
+      ALTER TABLE workspaces
+        ADD COLUMN IF NOT EXISTS date_format VARCHAR(20) NOT NULL DEFAULT 'MM/DD/YYYY',
+        ADD COLUMN IF NOT EXISTS language    VARCHAR(20) NOT NULL DEFAULT 'en';
+
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS phone     VARCHAR(50)  NULL,
+        ADD COLUMN IF NOT EXISTS job_title VARCHAR(120) NULL;
+
+      ALTER TABLE workspace_settings
+        ADD COLUMN IF NOT EXISTS reimbursement_rules          TEXT    NULL,
+        ADD COLUMN IF NOT EXISTS integration_resend_connected BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS integration_openai_connected BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS integration_github_connected BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS crm_pipeline_stages          JSONB   NOT NULL DEFAULT
+          '[{"id":"lead","label":"Lead","position":1},
+            {"id":"qualified","label":"Qualified","position":2},
+            {"id":"proposal_sent","label":"Proposal Sent","position":3},
+            {"id":"negotiation","label":"Negotiation","position":4},
+            {"id":"advance_received","label":"Advance Received","position":5},
+            {"id":"active_client","label":"Active Client","position":6},
+            {"id":"completed","label":"Completed","position":7},
+            {"id":"lost","label":"Lost","position":8}]'::jsonb;
+
+      -- V019__integration_credentials.sql (skipped by db-runner due to duplicate V019 prefix)
+      ALTER TABLE workspace_settings
+        ADD COLUMN IF NOT EXISTS integration_credentials JSONB NOT NULL DEFAULT '{}';
+    `);
+    settingsSchemaEnsured = true;
+    // Reset the credentials column cache so it re-checks after schema is applied
+    credentialsColumnExists = null;
+    console.error("[settings] ensureSettingsSchema: schema columns verified/applied");
+  } catch (err: unknown) {
+    const e = err as { message?: string; code?: string };
+    console.error("[settings] ensureSettingsSchema FAILED — message=%s code=%s", e?.message, e?.code);
+    // Do not throw — let the query fail naturally with a clear column error
+  }
+}
+// ── End runtime schema guard ─────────────────────────────────────────────────
+
 // Runtime check: does the integration_credentials column exist?
 let credentialsColumnExists: boolean | null = null;
 
@@ -93,6 +147,10 @@ export async function getSettings(
 ): Promise<ServiceResult<SettingsData>> {
   try {
     console.error("[settings.getSettings] START workspaceId=%s userId=%s", workspaceId, userId);
+
+    // Step 0: ensure the two skipped migrations (V018 settings_dynamic,
+    //         V019 integration_credentials) have been applied.
+    await ensureSettingsSchema();
 
     // Step 1: ensure workspace_settings row exists
     try {
@@ -238,6 +296,7 @@ export async function updateSettings(
   const client = await db.connect();
 
   try {
+    await ensureSettingsSchema();
     await client.query("BEGIN");
     await client.query(
       `INSERT INTO workspace_settings (workspace_id)

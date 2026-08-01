@@ -58,44 +58,75 @@ let settingsSchemaEnsured = false;
 
 async function ensureSettingsSchema(): Promise<void> {
   if (settingsSchemaEnsured) return;
-  try {
-    await db.query(`
-      -- V018__settings_dynamic.sql (skipped by db-runner due to duplicate V018 prefix)
-      ALTER TABLE workspaces
-        ADD COLUMN IF NOT EXISTS date_format VARCHAR(20) NOT NULL DEFAULT 'MM/DD/YYYY',
-        ADD COLUMN IF NOT EXISTS language    VARCHAR(20) NOT NULL DEFAULT 'en';
 
-      ALTER TABLE users
-        ADD COLUMN IF NOT EXISTS phone     VARCHAR(50)  NULL,
-        ADD COLUMN IF NOT EXISTS job_title VARCHAR(120) NULL;
+  // Each statement must be a separate db.query() call.
+  // The pg driver does NOT support multiple semicolon-separated statements
+  // in a single query() call — only the first statement would execute.
 
-      ALTER TABLE workspace_settings
-        ADD COLUMN IF NOT EXISTS reimbursement_rules          TEXT    NULL,
-        ADD COLUMN IF NOT EXISTS integration_resend_connected BOOLEAN NOT NULL DEFAULT FALSE,
-        ADD COLUMN IF NOT EXISTS integration_openai_connected BOOLEAN NOT NULL DEFAULT FALSE,
-        ADD COLUMN IF NOT EXISTS integration_github_connected BOOLEAN NOT NULL DEFAULT FALSE,
-        ADD COLUMN IF NOT EXISTS crm_pipeline_stages          JSONB   NOT NULL DEFAULT
-          '[{"id":"lead","label":"Lead","position":1},
-            {"id":"qualified","label":"Qualified","position":2},
-            {"id":"proposal_sent","label":"Proposal Sent","position":3},
-            {"id":"negotiation","label":"Negotiation","position":4},
-            {"id":"advance_received","label":"Advance Received","position":5},
-            {"id":"active_client","label":"Active Client","position":6},
-            {"id":"completed","label":"Completed","position":7},
-            {"id":"lost","label":"Lost","position":8}]'::jsonb;
+  const statements: Array<{ label: string; sql: string }> = [
+    // V018__settings_dynamic.sql — workspaces columns
+    {
+      label: "workspaces.date_format",
+      sql: `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS date_format VARCHAR(20) NOT NULL DEFAULT 'MM/DD/YYYY'`,
+    },
+    {
+      label: "workspaces.language",
+      sql: `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS language VARCHAR(20) NOT NULL DEFAULT 'en'`,
+    },
+    // V018__settings_dynamic.sql — users columns
+    {
+      label: "users.phone",
+      sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50) NULL`,
+    },
+    {
+      label: "users.job_title",
+      sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(120) NULL`,
+    },
+    // V018__settings_dynamic.sql — workspace_settings columns
+    {
+      label: "workspace_settings.reimbursement_rules",
+      sql: `ALTER TABLE workspace_settings ADD COLUMN IF NOT EXISTS reimbursement_rules TEXT NULL`,
+    },
+    {
+      label: "workspace_settings.integration_resend_connected",
+      sql: `ALTER TABLE workspace_settings ADD COLUMN IF NOT EXISTS integration_resend_connected BOOLEAN NOT NULL DEFAULT FALSE`,
+    },
+    {
+      label: "workspace_settings.integration_openai_connected",
+      sql: `ALTER TABLE workspace_settings ADD COLUMN IF NOT EXISTS integration_openai_connected BOOLEAN NOT NULL DEFAULT FALSE`,
+    },
+    {
+      label: "workspace_settings.integration_github_connected",
+      sql: `ALTER TABLE workspace_settings ADD COLUMN IF NOT EXISTS integration_github_connected BOOLEAN NOT NULL DEFAULT FALSE`,
+    },
+    {
+      label: "workspace_settings.crm_pipeline_stages",
+      sql: `ALTER TABLE workspace_settings ADD COLUMN IF NOT EXISTS crm_pipeline_stages JSONB NOT NULL DEFAULT '[{"id":"lead","label":"Lead","position":1},{"id":"qualified","label":"Qualified","position":2},{"id":"proposal_sent","label":"Proposal Sent","position":3},{"id":"negotiation","label":"Negotiation","position":4},{"id":"advance_received","label":"Advance Received","position":5},{"id":"active_client","label":"Active Client","position":6},{"id":"completed","label":"Completed","position":7},{"id":"lost","label":"Lost","position":8}]'::jsonb`,
+    },
+    // V019__integration_credentials.sql
+    {
+      label: "workspace_settings.integration_credentials",
+      sql: `ALTER TABLE workspace_settings ADD COLUMN IF NOT EXISTS integration_credentials JSONB NOT NULL DEFAULT '{}'`,
+    },
+  ];
 
-      -- V019__integration_credentials.sql (skipped by db-runner due to duplicate V019 prefix)
-      ALTER TABLE workspace_settings
-        ADD COLUMN IF NOT EXISTS integration_credentials JSONB NOT NULL DEFAULT '{}';
-    `);
+  let allOk = true;
+  for (const { label, sql } of statements) {
+    try {
+      await db.query(sql);
+      console.error("[settings] ensureSettingsSchema: OK — %s", label);
+    } catch (err: unknown) {
+      const e = err as { message?: string; code?: string };
+      console.error("[settings] ensureSettingsSchema FAILED — %s — message=%s code=%s", label, e?.message, e?.code);
+      allOk = false;
+    }
+  }
+
+  if (allOk) {
     settingsSchemaEnsured = true;
     // Reset the credentials column cache so it re-checks after schema is applied
     credentialsColumnExists = null;
-    console.error("[settings] ensureSettingsSchema: schema columns verified/applied");
-  } catch (err: unknown) {
-    const e = err as { message?: string; code?: string };
-    console.error("[settings] ensureSettingsSchema FAILED — message=%s code=%s", e?.message, e?.code);
-    // Do not throw — let the query fail naturally with a clear column error
+    console.error("[settings] ensureSettingsSchema: all columns verified/applied");
   }
 }
 // ── End runtime schema guard ─────────────────────────────────────────────────
